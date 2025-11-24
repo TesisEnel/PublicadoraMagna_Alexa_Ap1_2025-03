@@ -1,6 +1,18 @@
-﻿namespace PublicadoraMagna.Model
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace PublicadoraMagna.Model;
+
+public class Institucion
 {
-    public class Institucion
-    {
-    }
+    [Key]
+    public int InstitucionId { get; set; }
+    [Required]
+    public string Nombre { get; set; }
+    public string Rnc { get; set; }
+    public string CorreoContacto { get; set; }
+    public string Telefono { get; set; }
+    public DateTime FechaRegistro { get; set; }
+
+
+    public ICollection<Usuario> Usuarios { get; set; }
 }

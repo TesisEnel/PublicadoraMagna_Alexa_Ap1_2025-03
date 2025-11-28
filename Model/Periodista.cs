@@ -9,6 +9,7 @@ public class Periodista
     public int PeriodistaId { get; set; }
     public string Nombres { get; set; }
     public bool EsActivo { get; set; } = true;
+    public string Email { get; set; }
 
     //implementar pago al periodista mas adelante
     public decimal TarifaBase { get; set; }

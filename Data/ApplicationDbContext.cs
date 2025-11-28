@@ -10,8 +10,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Institucion> Instituciones { get; set; }
     public DbSet<Articulo> Articulos { get; set; }
     public DbSet<Categoria> Categorias { get; set; }
-  
-    public DbSet<PagoInstitucion> PagosInstitucion{ get; set; }
+
+    public DbSet<PagoInstitucion> PagosInstitucion { get; set; }
     public DbSet<DetallePagoInstitucion> DetallesPagosInstitucion { get; set; }
     public DbSet<Periodista> Periodistas { get; set; }
     public DbSet<PagoPeriodista> PagosPeriodistas { get; set; }
@@ -20,4 +20,5 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
 
     public DbSet<ArticuloServicioPromocionales> ArticuloServicioPromocional { get; set; }
+
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using PublicadoraMagna.Components;
 using PublicadoraMagna.Components.Account;
 using PublicadoraMagna.Data;
@@ -30,8 +31,16 @@ namespace PublicadoraMagna
                 .AddIdentityCookies();
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
+
+            builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+              options.UseSqlServer(connectionString));
+
+            //builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            //    options.UseSqlServer(connectionString));
+
+
+
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -47,9 +56,11 @@ namespace PublicadoraMagna
                 .AddDefaultTokenProviders();
 
             builder.Services.AddScoped<CategoriaService>();
+            builder.Services.AddScoped<ArticuloService>();
             builder.Services.AddScoped<InstitucionService>();
             builder.Services.AddScoped<PeriodistaService>();
             builder.Services.AddScoped<ServicioPromocionalService>();
+            builder.Services.AddScoped<PagoService>();
 
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();

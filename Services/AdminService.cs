@@ -39,5 +39,9 @@ public class AdminService(IDbContextFactory<ApplicationDbContext> dbFactory)
         contexto.Update(categoria);
         return await contexto.SaveChangesAsync() > 0;
     }
-
+    public async Task<bool>Eliminar(int id)
+    {
+        using var contexto=await dbFactory.CreateDbContextAsync();
+        return await contexto.Categorias.AnyAsync(c=>c.CategoriaId==id);
+    }
 }

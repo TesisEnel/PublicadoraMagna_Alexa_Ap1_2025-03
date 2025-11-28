@@ -10,6 +10,8 @@ public class PagoPeriodista
    public DateTime Fecha { get; set; }
    public decimal Total { get; set; }
 
+    public string Estado { get; set; }
+   
    public Periodista Periodista { get; set; } = null!;
    public List<DetallePagoPeriodista> Detalles { get; set; } = new();
     }

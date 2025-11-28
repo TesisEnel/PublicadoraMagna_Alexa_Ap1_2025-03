@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PublicadoraMagna.Components;
 using PublicadoraMagna.Components.Account;
 using PublicadoraMagna.Data;
+using PublicadoraMagna.Services;
 
 namespace PublicadoraMagna
 {
@@ -39,8 +40,17 @@ namespace PublicadoraMagna
                     options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
                 })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
+
+
+
                 .AddSignInManager()
                 .AddDefaultTokenProviders();
+
+            builder.Services.AddScoped<CategoriaService>();
+            builder.Services.AddScoped<InstitucionService>();
+            builder.Services.AddScoped<PeriodistaService>();
+            builder.Services.AddScoped<ServicioPromocionalService>();
+
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 

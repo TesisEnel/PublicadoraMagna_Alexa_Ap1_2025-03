@@ -4,13 +4,10 @@ using PublicadoraMagna.Model;
 
 namespace PublicadoraMagna.Services;
 
-public class AdminService(IDbContextFactory<ApplicationDbContext> dbFactory)
+public class CategoriaService(IDbContextFactory<ApplicationDbContext> dbFactory)
 {
 
-
-
-
-    ///CATEGORIAS
+ 
     public async Task<bool> Guardar(Categoria categoria)
     {
         if (categoria.CategoriaId == 0)

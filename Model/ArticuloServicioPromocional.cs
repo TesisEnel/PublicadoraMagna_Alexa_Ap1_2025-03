@@ -2,7 +2,7 @@
 
 namespace PublicadoraMagna.Model;
 
-public class ArticuloServicioPromocional
+public class ArticuloServicioPromocionales
 {
     [Key]
     public int ArticuloServicioPromocionalId { get; set; }

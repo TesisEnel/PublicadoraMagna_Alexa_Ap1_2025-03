@@ -24,7 +24,7 @@ public class Articulo
         public EstadoArticulo Estado { get; set; }
 
     
-        public List<ArticuloServicioPromocional> ServiciosPromocionales { get; set; } = new();
+        public List<ArticuloServicioPromocionales> ServiciosPromocionales { get; set; } = new();
 
         public List<string> Imagenes { get; set; } = new();
 

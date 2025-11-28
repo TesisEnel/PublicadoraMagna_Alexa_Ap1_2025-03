@@ -6,5 +6,6 @@ namespace PublicadoraMagna.Services;
 
 public class ArticuloService(IDbContextFactory<ApplicationDbContext> dbFactory)
 {
+
 }
       

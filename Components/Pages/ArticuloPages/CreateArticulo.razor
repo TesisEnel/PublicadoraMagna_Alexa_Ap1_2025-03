@@ -1,0 +1,554 @@
+@page "/articulos/create"
+@page "/articulos/edit/{Id:int}"
+@rendermode InteractiveServer
+@using PublicadoraMagna.Model
+@using PublicadoraMagna.Services
+@using Microsoft.EntityFrameworkCore
+@inject ArticuloService articuloService
+@inject CategoriaService categoriaService
+@inject PeriodistaService periodistaService
+@inject InstitucionService institucionService
+@inject ServicioPromocionalService servicioPromocionalService
+@inject IDbContextFactory<PublicadoraMagna.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(Id > 0 ? "Editar Artículo" : "Crear Nuevo Artículo")</PageTitle>
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex align-items-center mb-4">
+        <button class="btn btn-light me-3" @onclick="Volver">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <div>
+            <h3 class="mb-0">Diario Magna</h3>
+            <p class="text-muted mb-0">@(Id > 0 ? "Editar Artículo" : "Crear Nuevo Artículo")</p>
+        </div>
+    </div>
+
+    <EditForm Model="articulo" OnValidSubmit="Guardar">
+        <DataAnnotationsValidator />
+        
+        <div class="row">
+          
+            <div class="col-lg-8 mb-4">
+                
+            
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded p-2 me-3">
+                                <i class="bi bi-file-text text-primary fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">Información Básica</h5>
+                                <small class="text-muted">Datos principales del artículo</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Título del Artículo <span class="text-danger">*</span></label>
+                            <InputText @bind-Value="articulo.Titulo" class="form-control form-control-lg" placeholder="Ingrese el título del artículo" />
+                            <ValidationMessage For="@(() => articulo.Titulo)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Categoría <span class="text-danger">*</span></label>
+                            <InputSelect @bind-Value="articulo.CategoriaId" class="form-select">
+                                <option value="0">-- Seleccione una categoría --</option>
+                                @foreach (var cat in categorias)
+                                {
+                                    <option value="@cat.CategoriaId">@cat.Nombre</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => articulo.CategoriaId)" class="text-danger" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Periodista</label>
+                                <InputSelect @bind-Value="articulo.PeriodistaId" class="form-select">
+                                    <option value="">-- Opcional --</option>
+                                    @foreach (var per in periodistas)
+                                    {
+                                        <option value="@per.PeriodistaId">@per.Nombres</option>
+                                    }
+                                </InputSelect>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Institución</label>
+                                <InputSelect @bind-Value="articulo.InstitucionId" class="form-select">
+                                    <option value="">-- Opcional --</option>
+                                    @foreach (var inst in instituciones)
+                                    {
+                                        <option value="@inst.InstitucionId">@inst.Nombre</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tipo de Artículo</label>
+                            <div class="form-check form-switch mt-2">
+                                <InputCheckbox @bind-Value="articulo.EsLibre" class="form-check-input" id="esLibre" style="width: 3em; height: 1.5em;" />
+                                <label class="form-check-label ms-2" for="esLibre">
+                                    <strong>@(articulo.EsLibre ? "Artículo de Acceso Libre" : "Artículo Pagado")</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded p-2 me-3">
+                                <i class="bi bi-text-paragraph text-primary fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">Contenido del Artículo</h5>
+                                <small class="text-muted">Redacción completa del artículo</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-bold">Contenido <span class="text-danger">*</span></label>
+                            <InputTextArea @bind-Value="articulo.Contenido" class="form-control" rows="12" placeholder="Escriba el contenido completo del artículo..." />
+                            <ValidationMessage For="@(() => articulo.Contenido)" class="text-danger" />
+                            <small class="text-muted">El resumen se generará automáticamente con los primeros 100 caracteres</small>
+                        </div>
+                    </div>
+                </div>
+
+              
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info bg-opacity-10 rounded p-2 me-3">
+                                <i class="bi bi-images text-info fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">Imágenes del Artículo</h5>
+                                <small class="text-muted">Agrega imágenes al artículo</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-10 mb-2">
+                                <input type="text" @bind="nuevaImagenUrl" class="form-control" placeholder="URL de la imagen" />
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-info w-100" @onclick="AgregarImagen">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (articulo.Imagenes != null && articulo.Imagenes.Any())
+                        {
+                            <div class="row">
+                                @foreach (var (imagen, index) in articulo.Imagenes.Select((img, idx) => (img, idx)))
+                                {
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card">
+                                            <img src="@imagen" class="card-img-top" alt="Imagen del artículo" style="height: 150px; object-fit: cover;" />
+                                            <div class="card-body p-2">
+                                                <button type="button" class="btn btn-sm btn-danger w-100" @onclick="() => EliminarImagen(index)">
+                                                    <i class="bi bi-trash"></i> Eliminar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> No hay imágenes agregadas
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded p-2 me-3">
+                                <i class="bi bi-megaphone text-success fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">Servicios Promocionales</h5>
+                                <small class="text-muted">Agrega servicios adicionales al artículo</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8 mb-2">
+                                <select @bind="servicioSeleccionadoId" class="form-select">
+                                    <option value="0">-- Seleccione un servicio --</option>
+                                    @foreach (var srv in serviciosPromocionales)
+                                    {
+                                        <option value="@srv.ServicioPromocionalId">@srv.Nombre - @srv.Precio.ToString("C")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-success w-100" @onclick="AgregarServicioTemporal">
+                                    <i class="bi bi-plus-circle"></i> Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (serviciosSeleccionados != null && serviciosSeleccionados.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Servicio</th>
+                                            <th>Precio</th>
+                                            <th width="50"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var srv in serviciosSeleccionados)
+                                        {
+                                            <tr>
+                                                <td>@srv.Nombre</td>
+                                                <td>@srv.Precio.ToString("C")</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-danger" @onclick="() => EliminarServicioTemporal(srv.ServicioPromocionalId)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> No hay servicios promocionales agregados
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+      
+            <div class="col-lg-4">
+                
+             
+                <div class="card shadow-sm mb-4 sticky-top" style="top: 20px;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded p-2 me-3">
+                                <i class="bi bi-currency-dollar text-success fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">Resumen de Costos</h5>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-tag me-2 text-muted"></i>
+                                    <span>Precio Base</span>
+                                </div>
+                                <strong>@ObtenerPrecioCategoria().ToString("C")</strong>
+                            </div>
+                            <small class="text-muted ms-4">@ObtenerNombreCategoria()</small>
+                        </div>
+
+                        @if (articulo.PeriodistaId.HasValue)
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person me-2 text-muted"></i>
+                                        <span>Periodista</span>
+                                    </div>
+                                    <strong>@ObtenerTarifaPeriodista().ToString("C")</strong>
+                                </div>
+                                <small class="text-muted ms-4">@ObtenerNombrePeriodista()</small>
+                            </div>
+                        }
+
+                        @if (serviciosSeleccionados != null && serviciosSeleccionados.Any())
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-megaphone me-2 text-muted"></i>
+                                        <span>Servicios Promocionales</span>
+                                    </div>
+                                    <strong>@serviciosSeleccionados.Sum(s => s.Precio).ToString("C")</strong>
+                                </div>
+                            </div>
+                        }
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calculator me-2"></i>
+                                <strong>Total a Pagar</strong>
+                            </div>
+                            <h4 class="mb-0 text-primary">@CalcularTotal().ToString("C")</h4>
+                        </div>
+                    </div>
+                </div>
+
+               
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="mb-3">Acciones</h6>
+                        
+                        <button type="submit" class="btn btn-primary w-100 mb-2" @onclick="() => guardarComoBorrador = true">
+                            <i class="bi bi-save"></i> Guardar Borrador
+                        </button>
+
+                        <button type="submit" class="btn btn-success w-100" @onclick="() => guardarComoBorrador = false">
+                            <i class="bi bi-send"></i> Enviar para Revisión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(mensaje))
+    {
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div class="alert alert-@tipoAlerta alert-dismissible fade show" role="alert">
+                @mensaje
+                <button type="button" class="btn-close" @onclick="() => mensaje = string.Empty"></button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    
+    private Articulo articulo = new();
+    private List<Categoria> categorias = new();
+    private List<Periodista> periodistas = new();
+    private List<Institucion> instituciones = new();
+    private List<ServicioPromocional> serviciosPromocionales = new();
+    private List<ServicioPromocional> serviciosSeleccionados = new();
+    
+    private int servicioSeleccionadoId = 0;
+    private string nuevaImagenUrl = string.Empty;
+    private bool guardarComoBorrador = false;
+    
+    private string mensaje = string.Empty;
+    private string tipoAlerta = "info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+        
+        if (Id > 0)
+        {
+            var articuloCompleto = await articuloService.GetArticuloCompleto(Id);
+            
+            if (articuloCompleto != null)
+            {
+                articulo = articuloCompleto;
+                
+              
+                serviciosSeleccionados = new List<ServicioPromocional>();
+                if (articulo.ServiciosPromocionales != null)
+                {
+                    foreach (var srv in articulo.ServiciosPromocionales)
+                    {
+                        if (srv.ServicioPromocional != null)
+                        {
+                            serviciosSeleccionados.Add(srv.ServicioPromocional);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            articulo = new Articulo();
+            serviciosSeleccionados = new List<ServicioPromocional>();
+        }
+    }
+
+    private async Task CargarDatos()
+    {
+        categorias = await categoriaService.Listar();
+        periodistas = await periodistaService.Listar();
+        instituciones = await institucionService.Listar();
+        serviciosPromocionales = await servicioPromocionalService.Listar();
+    }
+
+    private async Task Guardar()
+    {
+        try
+        {
+       
+            if (!string.IsNullOrEmpty(articulo.Contenido))
+            {
+                articulo.Resumen = articulo.Contenido.Length > 100 
+                    ? articulo.Contenido.Substring(0, 100) + "..." 
+                    : articulo.Contenido;
+            }
+
+       
+            if (articulo.ArticuloId == 0)
+            {
+                articulo.Estado = guardarComoBorrador ? EstadoArticulo.Borrador : EstadoArticulo.Pendiente;
+            }
+            
+            var resultado = await articuloService.Guardar(articulo);
+            
+            if (resultado)
+            {
+                
+                if (serviciosSeleccionados.Any() && articulo.ArticuloId == 0)
+                {
+                    using var contexto = await DbFactory.CreateDbContextAsync();
+                    var articuloGuardado = await contexto.Articulos
+                        .OrderByDescending(a => a.ArticuloId)
+                        .FirstOrDefaultAsync();
+                    
+                    if (articuloGuardado != null)
+                    {
+                        foreach (var srv in serviciosSeleccionados)
+                        {
+                            var articuloServicio = new ArticuloServicioPromocionales
+                            {
+                                ServicioPromocionalId = srv.ServicioPromocionalId,
+                                PrecioAplicado = srv.Precio
+                            };
+                            
+                            await articuloService.AgregarServicio(articuloGuardado.ArticuloId, articuloServicio);
+                        }
+                    }
+                }
+                
+                Navigation.NavigateTo("/articulos");
+            }
+            else
+            {
+                MostrarMensaje("No se pudo guardar el artículo", "danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Error: {ex.Message}", "danger");
+        }
+    }
+
+    private void AgregarImagen()
+    {
+        if (!string.IsNullOrWhiteSpace(nuevaImagenUrl))
+        {
+            if (articulo.Imagenes == null)
+                articulo.Imagenes = new List<string>();
+            
+            articulo.Imagenes.Add(nuevaImagenUrl);
+            nuevaImagenUrl = string.Empty;
+        }
+    }
+
+    private void EliminarImagen(int index)
+    {
+        if (articulo.Imagenes != null && index >= 0 && index < articulo.Imagenes.Count)
+        {
+            articulo.Imagenes.RemoveAt(index);
+        }
+    }
+
+    private void AgregarServicioTemporal()
+    {
+        if (servicioSeleccionadoId == 0)
+        {
+            MostrarMensaje("Seleccione un servicio", "warning");
+            return;
+        }
+
+        var servicio = serviciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == servicioSeleccionadoId);
+        
+        if (servicio != null)
+        {
+            if (!serviciosSeleccionados.Any(s => s.ServicioPromocionalId == servicio.ServicioPromocionalId))
+            {
+                serviciosSeleccionados.Add(servicio);
+                servicioSeleccionadoId = 0;
+                MostrarMensaje("Servicio agregado correctamente", "success");
+            }
+            else
+            {
+                MostrarMensaje("Este servicio ya fue agregado", "warning");
+            }
+        }
+    }
+
+    private void EliminarServicioTemporal(int servicioId)
+    {
+        var servicio = serviciosSeleccionados.FirstOrDefault(s => s.ServicioPromocionalId == servicioId);
+        if (servicio != null)
+        {
+            serviciosSeleccionados.Remove(servicio);
+        }
+    }
+
+    private void Volver()
+    {
+        Navigation.NavigateTo("/articulos");
+    }
+
+    private string ObtenerNombreCategoria()
+    {
+        var categoria = categorias.FirstOrDefault(c => c.CategoriaId == articulo.CategoriaId);
+        return categoria?.Nombre ?? "No seleccionada";
+    }
+
+    private decimal ObtenerPrecioCategoria()
+    {
+        var categoria = categorias.FirstOrDefault(c => c.CategoriaId == articulo.CategoriaId);
+        return categoria?.PrecioBase ?? 0;
+    }
+
+    private string ObtenerNombrePeriodista()
+    {
+        var periodista = periodistas.FirstOrDefault(p => p.PeriodistaId == articulo.PeriodistaId);
+        return periodista?.Nombres ?? "";
+    }
+
+    private decimal ObtenerTarifaPeriodista()
+    {
+        var periodista = periodistas.FirstOrDefault(p => p.PeriodistaId == articulo.PeriodistaId);
+        return periodista?.TarifaBase ?? 0;
+    }
+
+    private decimal CalcularTotal()
+    {
+        decimal total = ObtenerPrecioCategoria();
+        
+        if (serviciosSeleccionados != null)
+        {
+            total += serviciosSeleccionados.Sum(s => s.Precio);
+        }
+        
+        return total;
+    }
+
+    private void MostrarMensaje(string msg, string tipo)
+    {
+        mensaje = msg;
+        tipoAlerta = tipo;
+    }
+}

@@ -537,6 +537,9 @@
     private decimal CalcularTotal()
     {
         decimal total = ObtenerPrecioCategoria();
+        if(articulo.PeriodistaId.HasValue){
+            total+=ObtenerTarifaPeriodista();
+        }
         
         if (serviciosSeleccionados != null)
         {

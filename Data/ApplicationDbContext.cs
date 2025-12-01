@@ -6,7 +6,7 @@ namespace PublicadoraMagna.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
 {
-    public DbSet<Usuario> Usuario { get; set; }
+    public DbSet<Model.ApplicationUser> Usuario { get; set; }
     public DbSet<Institucion> Instituciones { get; set; }
     public DbSet<Articulo> Articulos { get; set; }
     public DbSet<Categoria> Categorias { get; set; }

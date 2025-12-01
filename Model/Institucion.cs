@@ -17,5 +17,5 @@ public class Institucion
     public List<Articulo> Articulos { get; set; } = new();
 
 
-    public ICollection<Usuario> Usuarios { get; set; }
+    public ICollection<ApplicationUser> Usuarios { get; set; }
 }

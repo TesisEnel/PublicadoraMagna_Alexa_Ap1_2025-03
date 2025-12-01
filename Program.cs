@@ -6,12 +6,13 @@ using PublicadoraMagna.Components;
 using PublicadoraMagna.Components.Account;
 using PublicadoraMagna.Data;
 using PublicadoraMagna.Services;
+using System.Threading.Tasks;
 
 namespace PublicadoraMagna
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +48,7 @@ namespace PublicadoraMagna
                 {
                     options.SignIn.RequireConfirmedAccount = true;
                     options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-                })
+                }).AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
 
 
@@ -91,6 +92,21 @@ namespace PublicadoraMagna
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
 
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var admin=scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+                var roles = new[] {"Admin","Periodista","Editor","AdminInstitucion","RedactorInstitucion" };
+
+                foreach(var role in roles)
+                {
+                    if(!await admin.RoleExistsAsync(role))
+                    {
+                        await admin.CreateAsync(new IdentityRole(role));
+                    }
+                }
+            }
             app.Run();
         }
     }

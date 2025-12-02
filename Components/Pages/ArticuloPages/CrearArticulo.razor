@@ -1,0 +1,508 @@
+@page "/articulos/crear"
+@page "/articulos/editar/{ArticuloId:int}"
+@using PublicadoraMagna.Model
+@using PublicadoraMagna.Services
+@inject ArticuloService ArticuloService
+@inject CategoriaService CategoriaService
+@inject PeriodistaService PeriodistaService
+@inject ServicioPromocionalService ServicioPromocionalService
+@inject NavigationManager navigationManager
+@rendermode InteractiveServer
+
+<PageTitle>@(ArticuloId > 0 ? "Editar Artículo" : "Crear Artículo")</PageTitle>
+
+<div class="container py-4">
+    <div class="card shadow-lg">
+        <div class="card-header text-center">
+            <h3>@(ArticuloId > 0 ? "Editar Artículo" : "Crear Nuevo Artículo")</h3>
+        </div>
+
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @errorMessage
+                    <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+                </div>
+            }
+
+            <!-- Datos del Artículo -->
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2">Datos del Artículo</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label">Título <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" @bind="articulo.Titulo" placeholder="Título del artículo" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                    <select class="form-select" @bind="articulo.CategoriaId">
+                        <option value="0">Seleccione una categoría</option>
+                        @foreach (var categoria in listaCategorias)
+                        {
+                            <option value="@categoria.CategoriaId">@categoria.Nombre (RD$ @categoria.PrecioBase.ToString("N0"))</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Contenido <span class="text-danger">*</span></label>
+                    <textarea class="form-control" rows="8" @bind="articulo.Contenido" placeholder="Escriba el contenido del artículo..."></textarea>
+                </div>
+            </div>
+
+            <!-- Autoría del Artículo (solo para instituciones) -->
+            @if (esUsuarioInstitucion && ArticuloId == 0)
+            {
+                <div class="mb-4">
+                    <h5 class="border-bottom pb-2">Autoría del Artículo</h5>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="autoria" id="autoriaInstitucion" 
+                               checked="@publicarComoInstitucion" @onchange="@(() => CambiarAutoria(true))">
+                        <label class="form-check-label" for="autoriaInstitucion">
+                            Publicar a nombre de: @nombreInstitucion (Institución)
+                        </label>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="autoria" id="autoriaContratado"
+                               checked="@(!publicarComoInstitucion)" @onchange="@(() => CambiarAutoria(false))">
+                        <label class="form-check-label" for="autoriaContratado">
+                            Contratar un periodista
+                        </label>
+                    </div>
+
+                    @if (!publicarComoInstitucion)
+                    {
+                        <div class="mt-3 ms-4">
+                            <label class="form-label">Seleccionar periodista <span class="text-danger">*</span></label>
+                            <select class="form-select" @bind="articulo.PeriodistaId">
+                                <option value="0">Seleccione un periodista</option>
+                                @foreach (var periodista in listaPeriodistas)
+                                {
+                                    <option value="@periodista.PeriodistaId">@periodista.Nombres (Tarifa: RD$ @periodista.TarifaBase.ToString("N0"))</option>
+                                }
+                            </select>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> El periodista podrá editar/aprobar el artículo antes de enviarlo al editor final.
+                            </small>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (esUsuarioPeriodista)
+            {
+                <div class="mb-4">
+                    <div class="alert alert-info">
+                        <strong>Autor:</strong> @nombrePeriodista (Periodista)
+                        <br />
+                        <small>Este artículo será publicado a tu nombre</small>
+                    </div>
+                </div>
+            }
+
+            <!-- Servicios Promocionales -->
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2">Servicios Promocionales (Opcional)</h5>
+                
+                @if (!string.IsNullOrEmpty(errorServicio))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @errorServicio
+                        <button type="button" class="btn-close" @onclick="@(() => errorServicio = string.Empty)"></button>
+                    </div>
+                }
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Servicio</label>
+                        <select class="form-select" @bind="servicioSeleccionadoId">
+                            <option value="0">Seleccione un servicio</option>
+                            @foreach (var servicio in listaServiciosPromocionales)
+                            {
+                                <option value="@servicio.ServicioPromocionalId">@servicio.Nombre (RD$ @servicio.Precio.ToString("N0"))</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Precio</label>
+                        <input type="text" class="form-control" 
+                               value="@(listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == servicioSeleccionadoId)?.Precio.ToString("C") ?? "")" 
+                               readonly />
+                    </div>
+
+                    <div class="col-md-2 align-self-end">
+                        <button type="button" class="btn btn-success bi bi-plus" @onclick="AgregarServicio"> Agregar</button>
+                    </div>
+                </div>
+
+                @if (articulo.ServiciosPromocionales.Any())
+                {
+                    <div class="mt-3">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Servicio</th>
+                                    <th>Precio</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in articulo.ServiciosPromocionales)
+                                {
+                                    var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == detalle.ServicioPromocionalId);
+                                    <tr>
+                                        <td>@(servicio?.Nombre ?? "N/A")</td>
+                                        <td>@detalle.PrecioAplicado.ToString("C")</td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger btn-sm bi bi-trash" @onclick="() => EliminarServicio(detalle)"> Remover</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <label class="float-end"><strong>Total Servicios: </strong>@totalServicios.ToString("C")</label>
+                    </div>
+                }
+            </div>
+
+            <!-- Imágenes y Resumen de Costos en 2 columnas -->
+            <div class="row">
+                <!-- Columna izquierda: Imágenes -->
+                <div class="col-md-6">
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">Imágenes (Opcional)</h5>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" @bind="nuevaImagen" placeholder="URL de la imagen" />
+                            <button type="button" class="btn btn-sm btn-success mt-2" @onclick="AgregarImagen">
+                                <i class="bi bi-plus-circle"></i> Agregar Imagen
+                            </button>
+                        </div>
+
+                        @if (articulo.Imagenes.Any())
+                        {
+                            <div class="mt-2">
+                                <p><strong>Imágenes agregadas:</strong></p>
+                                @foreach (var imagen in articulo.Imagenes)
+                                {
+                                    <div class="d-flex align-items-center mb-2">
+                                        <small class="me-2">@imagen</small>
+                                        <button type="button" class="btn btn-sm btn-danger" @onclick="@(() => EliminarImagen(imagen))">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Artículo Libre -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="esLibre" @bind="articulo.EsLibre" disabled="@esUsuarioPeriodista">
+                            <label class="form-check-label" for="esLibre">
+                                Artículo libre (visible para todos sin suscripción)
+                                @if (esUsuarioPeriodista)
+                                {
+                                    <small class="text-muted d-block">Obligatorio para periodistas independientes</small>
+                                }
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna derecha: Resumen de Costos -->
+                <div class="col-md-6">
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">Resumen de Costos</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                @if (esUsuarioPeriodista)
+                                {
+                                    <p class="mb-2"><strong>COSTOS:</strong></p>
+                                    <div class="ms-3">
+                                        <p class="mb-1">Precio base (@categoriaNombre): <span class="float-end">RD$ @precioBase.ToString("N0")</span></p>
+                                        <p class="mb-1">Servicios promocionales: <span class="float-end">RD$ @totalServicios.ToString("N0")</span></p>
+                                        <hr />
+                                        <p class="mb-3"><strong>Total a pagar: <span class="float-end">RD$ @(precioBase + totalServicios).ToString("N0")</span></strong></p>
+                                    </div>
+                                    
+                                    <p class="mb-2"><strong>INGRESOS:</strong></p>
+                                    <div class="ms-3">
+                                        <p class="mb-1">Tu tarifa base: <span class="float-end">RD$ @tarifaPeriodista.ToString("N0")</span></p>
+                                        <hr />
+                                        <p class="mb-0 text-success"><strong>Ganancia neta: <span class="float-end">RD$ @((tarifaPeriodista - precioBase - totalServicios)).ToString("N0") ✅</span></strong></p>
+                                    </div>
+                                }
+                                else if (!publicarComoInstitucion && articulo.PeriodistaId.HasValue && articulo.PeriodistaId > 0)
+                                {
+                                    <p class="mb-2"><strong>COSTOS:</strong></p>
+                                    <div class="ms-3">
+                                        <p class="mb-1">Precio base (@categoriaNombre): <span class="float-end">RD$ @precioBase.ToString("N0")</span></p>
+                                        <p class="mb-1">Servicios promocionales: <span class="float-end">RD$ @totalServicios.ToString("N0")</span></p>
+                                        <p class="mb-1">Pago a periodista: <span class="float-end">RD$ @tarifaPeriodista.ToString("N0")</span></p>
+                                        <hr />
+                                        <p class="mb-0"><strong>Total a pagar: <span class="float-end">RD$ @(precioBase + totalServicios + tarifaPeriodista).ToString("N0")</span></strong></p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="mb-1">Precio base (@categoriaNombre): <span class="float-end">RD$ @precioBase.ToString("N0")</span></p>
+                                    <p class="mb-1">Servicios promocionales: <span class="float-end">RD$ @totalServicios.ToString("N0")</span></p>
+                                    <hr />
+                                    <p class="mb-0"><strong>Total a pagar: <span class="float-end">RD$ @(precioBase + totalServicios).ToString("N0")</span></strong></p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <small class="text-muted d-block mb-3">
+                <span class="text-danger">*</span> Campos obligatorios
+            </small>
+        </div>
+
+        <div class="card-footer text-center">
+            <a href="/articulos" class="btn btn-secondary bi bi-arrow-left"> Volver</a>
+            <button type="button" class="btn btn-primary bi bi-floppy" @onclick="@(() => Guardar(EstadoArticulo.Borrador))"> Guardar como Borrador</button>
+            <button type="button" class="btn btn-success bi bi-send" @onclick="@(() => Guardar(EstadoArticulo.Pendiente))"> Enviar para Aprobación</button>
+            @if (ArticuloId > 0)
+            {
+                <button type="button" class="btn btn-danger bi bi-trash" @onclick="Eliminar"> Eliminar</button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int ArticuloId { get; set; }
+    // [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    public Articulo articulo { get; set; } = new Articulo();
+    public List<Categoria> listaCategorias { get; set; } = new();
+    public List<Periodista> listaPeriodistas { get; set; } = new();
+    public List<ServicioPromocional> listaServiciosPromocionales { get; set; } = new();
+    
+    public string errorMessage { get; set; } = string.Empty;
+    public string errorServicio { get; set; } = string.Empty;
+    public string nuevaImagen { get; set; } = string.Empty;
+    public int servicioSeleccionadoId { get; set; } = 0;
+    
+    public bool esUsuarioInstitucion = false;
+    public bool esUsuarioPeriodista = false;
+    public bool publicarComoInstitucion = true;
+    public int institucionIdActual = 0;
+    public int periodistaIdActual = 0;
+    public string nombreInstitucion = string.Empty;
+    public string nombrePeriodista = string.Empty;
+
+    public decimal precioBase = 0;
+    public decimal totalServicios = 0;
+    public decimal tarifaPeriodista = 0;
+    public string categoriaNombre = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargar listas
+        listaCategorias = await CategoriaService.Listar();
+        listaPeriodistas = await PeriodistaService.Listar();
+        listaServiciosPromocionales = await ServicioPromocionalService.Listar();
+
+        // TODO: Implementar cuando tengas autenticación
+        // var authState = await authenticationStateTask;
+        // var user = authState.User;
+        // esUsuarioInstitucion = user.IsInRole("AdminInstitucion") || user.IsInRole("RedactorInstitucion");
+        // esUsuarioPeriodista = user.IsInRole("Periodista");
+
+        // TEMPORAL: Simular usuario institución para probar
+        esUsuarioInstitucion = true;
+        esUsuarioPeriodista = false;
+        nombreInstitucion = "PUCMM";
+        institucionIdActual = 1; // Cambiar por el ID real
+
+        // Cargar artículo si es edición
+        if (ArticuloId > 0)
+        {
+            articulo = await ArticuloService.GetArticuloCompleto(ArticuloId);
+        }
+    }
+
+    private void CambiarAutoria(bool comoInstitucion)
+    {
+        publicarComoInstitucion = comoInstitucion;
+        if (comoInstitucion)
+        {
+            articulo.PeriodistaId = null;
+        }
+        RecalcularTotales();
+    }
+
+    private void AgregarServicio()
+    {
+        if (servicioSeleccionadoId <= 0)
+        {
+            errorServicio = "Debe seleccionar un servicio";
+            return;
+        }
+
+        var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == servicioSeleccionadoId);
+        if (servicio == null)
+        {
+            errorServicio = "Servicio no encontrado";
+            return;
+        }
+
+        // Verificar si ya existe
+        if (articulo.ServiciosPromocionales.Any(s => s.ServicioPromocionalId == servicioSeleccionadoId))
+        {
+            errorServicio = "Este servicio ya ha sido agregado";
+            return;
+        }
+
+        var nuevoServicio = new ArticuloServicioPromocionales
+        {
+            ServicioPromocionalId = servicioSeleccionadoId,
+            PrecioAplicado = servicio.Precio,
+            FechaAplicacion = DateTime.Now
+        };
+
+        articulo.ServiciosPromocionales.Add(nuevoServicio);
+        servicioSeleccionadoId = 0;
+        errorServicio = string.Empty;
+        RecalcularTotales();
+    }
+
+    private void EliminarServicio(ArticuloServicioPromocionales servicio)
+    {
+        articulo.ServiciosPromocionales.Remove(servicio);
+        RecalcularTotales();
+    }
+
+    private void AgregarImagen()
+    {
+        if (!string.IsNullOrWhiteSpace(nuevaImagen))
+        {
+            articulo.Imagenes.Add(nuevaImagen);
+            nuevaImagen = string.Empty;
+        }
+    }
+
+    private void EliminarImagen(string imagen)
+    {
+        articulo.Imagenes.Remove(imagen);
+    }
+
+    private void RecalcularTotales()
+    {
+        // Precio base de categoría
+        var categoria = listaCategorias.FirstOrDefault(c => c.CategoriaId == articulo.CategoriaId);
+        precioBase = categoria?.PrecioBase ?? 0;
+        categoriaNombre = categoria?.Nombre ?? "Sin categoría";
+
+        // Total servicios desde la lista del artículo
+        totalServicios = articulo.ServiciosPromocionales.Sum(s => s.PrecioAplicado);
+
+        // Tarifa periodista
+        if (articulo.PeriodistaId.HasValue && articulo.PeriodistaId > 0)
+        {
+            var periodista = listaPeriodistas.FirstOrDefault(p => p.PeriodistaId == articulo.PeriodistaId);
+            tarifaPeriodista = periodista?.TarifaBase ?? 0;
+        }
+        else if (esUsuarioPeriodista)
+        {
+            // TODO: Obtener tarifa del periodista actual
+            tarifaPeriodista = 7000; // Placeholder
+        }
+        else
+        {
+            tarifaPeriodista = 0;
+        }
+    }
+
+    private async Task Guardar(EstadoArticulo estado)
+    {
+        if (string.IsNullOrWhiteSpace(articulo.Titulo))
+        {
+            errorMessage = "El título es requerido";
+            return;
+        }
+
+        if (articulo.CategoriaId == 0)
+        {
+            errorMessage = "Debe seleccionar una categoría";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(articulo.Contenido))
+        {
+            errorMessage = "El contenido es requerido";
+            return;
+        }
+
+        if (esUsuarioInstitucion && !publicarComoInstitucion && (!articulo.PeriodistaId.HasValue || articulo.PeriodistaId == 0))
+        {
+            errorMessage = "Debe seleccionar un periodista";
+            return;
+        }
+
+        try
+        {
+            // Generar resumen automático (primeros 200 caracteres del contenido)
+            articulo.Resumen = articulo.Contenido.Length > 200 
+                ? articulo.Contenido.Substring(0, 200) + "..." 
+                : articulo.Contenido;
+
+            articulo.Estado = estado;
+
+            // Establecer InstitucionId o PeriodistaId según corresponda
+            if (esUsuarioInstitucion)
+            {
+                articulo.InstitucionId = institucionIdActual; // TODO: Obtener del usuario actual
+                if (publicarComoInstitucion)
+                {
+                    articulo.PeriodistaId = null;
+                }
+            }
+            else if (esUsuarioPeriodista)
+            {
+                articulo.PeriodistaId = periodistaIdActual; // TODO: Obtener del usuario actual
+                articulo.InstitucionId = null;
+            }
+
+            var guardado = await ArticuloService.Guardar(articulo);
+
+            if (guardado)
+            {
+                // TODO: Guardar servicios promocionales seleccionados
+                navigationManager.NavigateTo("/articulos");
+            }
+            else
+            {
+                errorMessage = "No se pudo guardar correctamente";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task Eliminar()
+    {
+        var eliminado = await ArticuloService.Eliminar(ArticuloId);
+
+        if (eliminado)
+        {
+            navigationManager.NavigateTo("/articulos");
+        }
+        else
+        {
+            errorMessage = "No se pudo eliminar correctamente";
+        }
+    }
+}

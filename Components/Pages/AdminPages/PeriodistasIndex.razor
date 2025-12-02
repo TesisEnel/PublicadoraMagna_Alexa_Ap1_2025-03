@@ -1,0 +1,238 @@
+@page "/admin/periodistas"
+@using Microsoft.EntityFrameworkCore
+@using PublicadoraMagna.Data
+@using PublicadoraMagna.Model
+@using PublicadoraMagna.Services
+@using Microsoft.AspNetCore.Identity
+@inject PeriodistaService PeriodistaService
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+
+<PageTitle>Gestión de Periodistas</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Periodistas</h2>
+        <button class="btn btn-primary" @onclick="IrACrear">
+            <i class="bi bi-plus-circle"></i> Nuevo Periodista
+        </button>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Resumen -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Periodistas</h5>
+                        <h2>@periodistas.Count</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Activos</h5>
+                        <h2>@periodistas.Count(p => p.EsActivo)</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Inactivos</h5>
+                        <h2>@periodistas.Count(p => !p.EsActivo)</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h5 class="card-title">Artículos Totales</h5>
+                        <h2>@periodistas.Sum(p => p.Articulos?.Count ?? 0)</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" placeholder="Buscar por nombre..." 
+                               @bind="terminoBusqueda" @bind:event="oninput" />
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" @bind="filtroEstado">
+                            <option value="">Todos</option>
+                            <option value="activo">Activos</option>
+                            <option value="inactivo">Inactivos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Periodistas -->
+        @if (!PeriodistasFiltrados().Any())
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No hay periodistas registrados.
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Tarifa Base</th>
+                                    <th>Estado</th>
+                                    <th>Artículos</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var periodista in PeriodistasFiltrados())
+                                {
+                                    <tr>
+                                        <td>@periodista.Nombres</td>
+                                        <td>
+                                            @if (emailsPeriodistas.ContainsKey(periodista.PeriodistaId))
+                                            {
+                                                @emailsPeriodistas[periodista.PeriodistaId]
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Sin usuario</span>
+                                            }
+                                        </td>
+                                        <td>RD$ @periodista.TarifaBase.ToString("N0")</td>
+                                        <td>
+                                            @if (periodista.EsActivo)
+                                            {
+                                                <span class="badge bg-success">Activo</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            }
+                                        </td>
+                                        <td>@(periodista.Articulos?.Count ?? 0)</td>
+                                        <td>@periodista.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" @onclick="() => Editar(periodista.PeriodistaId)">
+                                                <i class="bi bi-pencil"></i> Editar
+                                            </button>
+                                            <button class="btn btn-sm btn-warning" @onclick="() => CambiarEstado(periodista.PeriodistaId, !periodista.EsActivo)">
+                                                <i class="bi bi-toggle-on"></i> @(periodista.EsActivo ? "Desactivar" : "Activar")
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    public List<Periodista> periodistas { get; set; } = new();
+    public Dictionary<int, string> emailsPeriodistas { get; set; } = new();
+    public string terminoBusqueda { get; set; } = string.Empty;
+    public string filtroEstado { get; set; } = string.Empty;
+    public bool cargando { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPeriodistas();
+    }
+
+    private async Task CargarPeriodistas()
+    {
+        try
+        {
+            cargando = true;
+            periodistas = await PeriodistaService.Listar();
+
+            // Cargar emails de cada periodista
+            foreach (var periodista in periodistas)
+            {
+                var user = await UserManager.Users
+                    .FirstOrDefaultAsync(u => u.PeriodistaId == periodista.PeriodistaId);
+
+                if (user != null)
+                {
+                    emailsPeriodistas[periodista.PeriodistaId] = user.Email ?? "";
+                }
+            }
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private List<Periodista> PeriodistasFiltrados()
+    {
+        var resultado = periodistas.AsEnumerable();
+
+        // Filtrar por búsqueda
+        if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+        {
+            resultado = resultado.Where(p =>
+                p.Nombres.Contains(terminoBusqueda, StringComparison.OrdinalIgnoreCase) ||
+                (emailsPeriodistas.ContainsKey(p.PeriodistaId) &&
+                 emailsPeriodistas[p.PeriodistaId].Contains(terminoBusqueda, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+
+        // Filtrar por estado
+        if (filtroEstado == "activo")
+        {
+            resultado = resultado.Where(p => p.EsActivo);
+        }
+        else if (filtroEstado == "inactivo")
+        {
+            resultado = resultado.Where(p => !p.EsActivo);
+        }
+
+        return resultado.ToList();
+    }
+
+    private void IrACrear()
+    {
+        Navigation.NavigateTo("/admin/periodistas/crear");
+    }
+
+    private void Editar(int id)
+    {
+        Navigation.NavigateTo($"/admin/periodistas/editar/{id}");
+    }
+
+    private async Task CambiarEstado(int id, bool nuevoEstado)
+    {
+        await PeriodistaService.CambiarEstado(id, nuevoEstado);
+        await CargarPeriodistas();
+    }
+}

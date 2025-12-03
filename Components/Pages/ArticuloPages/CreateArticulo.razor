@@ -1,227 +1,173 @@
-@page "/articulos/create"
-@page "/articulos/edit/{Id:int}"
+@page "/articulos/crear"
+@page "/articulos/editar/{ArticuloId:int}"
+@using Microsoft.AspNetCore.Identity
+@inject ArticuloService ArticuloService
+@inject CategoriaService CategoriaService
+@inject PeriodistaService PeriodistaService
+@inject ServicioPromocionalService ServicioPromocionalService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager navigationManager
 @rendermode InteractiveServer
-@using PublicadoraMagna.Model
-@using PublicadoraMagna.Services
-@using Microsoft.EntityFrameworkCore
-@inject ArticuloService articuloService
-@inject CategoriaService categoriaService
-@inject PeriodistaService periodistaService
-@inject InstitucionService institucionService
-@inject ServicioPromocionalService servicioPromocionalService
-@inject IDbContextFactory<PublicadoraMagna.Data.ApplicationDbContext> DbFactory
-@inject NavigationManager Navigation
 
-<PageTitle>@(Id > 0 ? "Editar Artículo" : "Crear Nuevo Artículo")</PageTitle>
+<PageTitle>@(ArticuloId > 0 ? "Editar Artículo" : "Crear Artículo")</PageTitle>
 
 <div class="container-fluid py-4">
-
-    <div class="d-flex align-items-center mb-4">
-        <button class="btn btn-light me-3" @onclick="Volver">
-            <i class="bi bi-arrow-left"></i>
-        </button>
-        <div>
-            <h3 class="mb-0">Diario Magna</h3>
-            <p class="text-muted mb-0">@(Id > 0 ? "Editar Artículo" : "Crear Nuevo Artículo")</p>
-        </div>
-    </div>
-
-    <EditForm Model="articulo" OnValidSubmit="Guardar">
-        <DataAnnotationsValidator />
-        
-        <div class="row">
-          
-            <div class="col-lg-8 mb-4">
-                
+    <div class="row">
+        <div class="col-lg-8">
             
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-primary bg-opacity-10 rounded p-2 me-3">
-                                <i class="bi bi-file-text text-primary fs-5"></i>
-                            </div>
-                            <div>
-                                <h5 class="mb-0">Información Básica</h5>
-                                <small class="text-muted">Datos principales del artículo</small>
-                            </div>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @errorMessage
+                    <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+                </div>
+            }
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
+                            <i class="bi bi-file-text text-primary fs-4"></i>
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Título del Artículo <span class="text-danger">*</span></label>
-                            <InputText @bind-Value="articulo.Titulo" class="form-control form-control-lg" placeholder="Ingrese el título del artículo" />
-                            <ValidationMessage For="@(() => articulo.Titulo)" class="text-danger" />
+                        <div>
+                            <h5 class="mb-0">Información Básica</h5>
+                            <small class="text-muted">Datos principales del artículo</small>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Categoría <span class="text-danger">*</span></label>
-                            <InputSelect @bind-Value="articulo.CategoriaId" class="form-select">
-                                <option value="0">-- Seleccione una categoría --</option>
-                                @foreach (var cat in categorias)
-                                {
-                                    <option value="@cat.CategoriaId">@cat.Nombre</option>
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="@(() => articulo.CategoriaId)" class="text-danger" />
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Título del Artículo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" @bind="articulo.Titulo" placeholder="Ingrese el título del artículo" />
+                    </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Periodista</label>
-                                <InputSelect @bind-Value="articulo.PeriodistaId" class="form-select">
-                                    <option value="">-- Opcional --</option>
-                                    @foreach (var per in periodistas)
-                                    {
-                                        <option value="@per.PeriodistaId">@per.Nombres</option>
-                                    }
-                                </InputSelect>
-                            </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Categoría <span class="text-danger">*</span></label>
+                        <select class="form-select" @bind="selectedCategoriaId">
+                            <option value="0">-- Seleccione una categoría --</option>
+                            @foreach (var categoria in listaCategorias)
+                            {
+                                <option value="@categoria.CategoriaId">@categoria.Nombre (RD$ @categoria.PrecioBase.ToString("N0"))</option>
+                            }
+                        </select>
+                    </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Institución</label>
-                                <InputSelect @bind-Value="articulo.InstitucionId" class="form-select">
-                                    <option value="">-- Opcional --</option>
-                                    @foreach (var inst in instituciones)
-                                    {
-                                        <option value="@inst.InstitucionId">@inst.Nombre</option>
-                                    }
-                                </InputSelect>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Tipo de Artículo</label>
-                            <div class="form-check form-switch mt-2">
-                                <InputCheckbox @bind-Value="articulo.EsLibre" class="form-check-input" id="esLibre" style="width: 3em; height: 1.5em;" />
-                                <label class="form-check-label ms-2" for="esLibre">
-                                    <strong>@(articulo.EsLibre ? "Artículo de Acceso Libre" : "Artículo Pagado")</strong>
-                                </label>
-                            </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tipo de Artículo</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="esLibre" @bind="articulo.EsLibre">
+                            <label class="form-check-label" for="esLibre">
+                                Artículo Pagado
+                            </label>
                         </div>
                     </div>
                 </div>
-
-            
-                <div class="card shadow-sm mb-4">
+            </div>
+            @if (esUsuarioInstitucion)
+            {
+                <div class="card mb-4">
                     <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-primary bg-opacity-10 rounded p-2 me-3">
-                                <i class="bi bi-text-paragraph text-primary fs-5"></i>
-                            </div>
-                            <div>
-                                <h5 class="mb-0">Contenido del Artículo</h5>
-                                <small class="text-muted">Redacción completa del artículo</small>
-                            </div>
-                        </div>
-
-                        <div class="mb-0">
-                            <label class="form-label fw-bold">Contenido <span class="text-danger">*</span></label>
-                            <InputTextArea @bind-Value="articulo.Contenido" class="form-control" rows="12" placeholder="Escriba el contenido completo del artículo..." />
-                            <ValidationMessage For="@(() => articulo.Contenido)" class="text-danger" />
-                            <small class="text-muted">El resumen se generará automáticamente con los primeros 100 caracteres</small>
+                        <div class="alert alert-primary mb-0">
+                            <i class="bi bi-building fs-5"></i>
+                            <strong class="ms-2">Publicado por:</strong> @nombreInstitucion (Institución)
+                            <br />
+                            <small class="ms-4">Este artículo será publicado a nombre de tu institución</small>
                         </div>
                     </div>
                 </div>
+            }
 
-              
-                <div class="card shadow-sm mb-4">
+            @if (esUsuarioPeriodista)
+            {
+                <div class="card mb-4">
                     <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-info bg-opacity-10 rounded p-2 me-3">
-                                <i class="bi bi-images text-info fs-5"></i>
-                            </div>
-                            <div>
-                                <h5 class="mb-0">Imágenes del Artículo</h5>
-                                <small class="text-muted">Agrega imágenes al artículo</small>
-                            </div>
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-person-check fs-5"></i>
+                            <strong class="ms-2">Autor:</strong> @nombrePeriodista (Periodista)
+                            <br />
+                            <small class="ms-4">Este artículo será publicado a tu nombre</small>
                         </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-10 mb-2">
-                                <input type="text" @bind="nuevaImagenUrl" class="form-control" placeholder="URL de la imagen" />
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-info w-100" @onclick="AgregarImagen">
-                                    <i class="bi bi-plus-circle"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        @if (articulo.Imagenes != null && articulo.Imagenes.Any())
-                        {
-                            <div class="row">
-                                @foreach (var (imagen, index) in articulo.Imagenes.Select((img, idx) => (img, idx)))
-                                {
-                                    <div class="col-md-4 mb-3">
-                                        <div class="card">
-                                            <img src="@imagen" class="card-img-top" alt="Imagen del artículo" style="height: 150px; object-fit: cover;" />
-                                            <div class="card-body p-2">
-                                                <button type="button" class="btn btn-sm btn-danger w-100" @onclick="() => EliminarImagen(index)">
-                                                    <i class="bi bi-trash"></i> Eliminar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle"></i> No hay imágenes agregadas
-                            </div>
-                        }
                     </div>
                 </div>
+            }
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
+                            <i class="bi bi-text-paragraph text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Contenido del Artículo</h5>
+                            <small class="text-muted">Redacción completa del artículo</small>
+                        </div>
+                    </div>
 
-            
-                <div class="card shadow-sm mb-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Contenido <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="10" @bind="articulo.Contenido" 
+                                  placeholder="Escriba el contenido completo del artículo..."></textarea>
+                    </div>
+                </div>
+            </div>
+            @if (!esUsuarioPeriodista)
+            {
+                <div class="card mb-4">
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-3">
-                            <div class="bg-success bg-opacity-10 rounded p-2 me-3">
-                                <i class="bi bi-megaphone text-success fs-5"></i>
+                            <div class="bg-warning bg-opacity-10 p-2 rounded me-3">
+                                <i class="bi bi-megaphone text-warning fs-4"></i>
                             </div>
                             <div>
                                 <h5 class="mb-0">Servicios Promocionales</h5>
-                                <small class="text-muted">Agrega servicios adicionales al artículo</small>
+                                <small class="text-muted">Opcional - Aumenta la visibilidad del artículo</small>
                             </div>
                         </div>
 
+                        @if (!string.IsNullOrEmpty(errorServicio))
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                @errorServicio
+                                <button type="button" class="btn-close" @onclick="@(() => errorServicio = string.Empty)"></button>
+                            </div>
+                        }
+
                         <div class="row mb-3">
-                            <div class="col-md-8 mb-2">
-                                <select @bind="servicioSeleccionadoId" class="form-select">
-                                    <option value="0">-- Seleccione un servicio --</option>
-                                    @foreach (var srv in serviciosPromocionales)
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">Servicio</label>
+                                <select class="form-select" @bind="servicioSeleccionadoId">
+                                    <option value="0">Seleccione un servicio</option>
+                                    @foreach (var servicio in listaServiciosPromocionales)
                                     {
-                                        <option value="@srv.ServicioPromocionalId">@srv.Nombre - @srv.Precio.ToString("C")</option>
+                                        <option value="@servicio.ServicioPromocionalId">@servicio.Nombre - RD$ @servicio.Precio.ToString("N0")</option>
                                     }
                                 </select>
                             </div>
-                            <div class="col-md-4">
-                                <button type="button" class="btn btn-success w-100" @onclick="AgregarServicioTemporal">
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary w-100" @onclick="AgregarServicio">
                                     <i class="bi bi-plus-circle"></i> Agregar
                                 </button>
                             </div>
                         </div>
 
-                        @if (serviciosSeleccionados != null && serviciosSeleccionados.Any())
+                        @if (articulo.ServiciosPromocionales.Any())
                         {
                             <div class="table-responsive">
                                 <table class="table table-sm">
-                                    <thead class="table-light">
+                                    <thead>
                                         <tr>
                                             <th>Servicio</th>
-                                            <th>Precio</th>
-                                            <th width="50"></th>
+                                            <th class="text-end">Precio</th>
+                                            <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var srv in serviciosSeleccionados)
+                                        @foreach (var detalle in articulo.ServiciosPromocionales)
                                         {
+                                            var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == detalle.ServicioPromocionalId);
                                             <tr>
-                                                <td>@srv.Nombre</td>
-                                                <td>@srv.Precio.ToString("C")</td>
-                                                <td>
-                                                    <button type="button" class="btn btn-sm btn-danger" @onclick="() => EliminarServicioTemporal(srv.ServicioPromocionalId)">
+                                                <td>@(servicio?.Nombre ?? "N/A")</td>
+                                                <td class="text-end">RD$ @detalle.PrecioAplicado.ToString("N0")</td>
+                                                <td class="text-end">
+                                                    <button type="button" class="btn btn-sm btn-danger" @onclick="() => EliminarServicio(detalle)">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </td>
@@ -231,327 +177,402 @@
                                 </table>
                             </div>
                         }
-                        else
-                        {
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle"></i> No hay servicios promocionales agregados
-                            </div>
-                        }
                     </div>
+                </div>
+            }
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info bg-opacity-10 p-2 rounded me-3">
+                            <i class="bi bi-image text-info fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Imágenes</h5>
+                            <small class="text-muted">Opcional - Agregar imágenes al artículo</small>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" @bind="nuevaImagen" placeholder="URL de la imagen" />
+                        <button class="btn btn-outline-primary" type="button" @onclick="AgregarImagen">
+                            <i class="bi bi-plus-circle"></i> Agregar
+                        </button>
+                    </div>
+
+                    @if (articulo.Imagenes.Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var imagen in articulo.Imagenes)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <small class="text-truncate">@imagen</small>
+                                    <button type="button" class="btn btn-sm btn-danger" @onclick="@(() => EliminarImagen(imagen))">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
 
-      
-            <div class="col-lg-4">
-                
-             
-                <div class="card shadow-sm mb-4 sticky-top" style="top: 20px;">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-success bg-opacity-10 rounded p-2 me-3">
-                                <i class="bi bi-currency-dollar text-success fs-5"></i>
-                            </div>
-                            <div>
-                                <h5 class="mb-0">Resumen de Costos</h5>
-                            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-4 sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success bg-opacity-10 p-2 rounded me-3">
+                            <i class="bi bi-currency-dollar text-success fs-4"></i>
                         </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-tag me-2 text-muted"></i>
-                                    <span>Precio Base</span>
-                                </div>
-                                <strong>@ObtenerPrecioCategoria().ToString("C")</strong>
-                            </div>
-                            <small class="text-muted ms-4">@ObtenerNombreCategoria()</small>
-                        </div>
-
-                        @if (articulo.PeriodistaId.HasValue)
-                        {
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-person me-2 text-muted"></i>
-                                        <span>Periodista</span>
-                                    </div>
-                                    <strong>@ObtenerTarifaPeriodista().ToString("C")</strong>
-                                </div>
-                                <small class="text-muted ms-4">@ObtenerNombrePeriodista()</small>
-                            </div>
-                        }
-
-                        @if (serviciosSeleccionados != null && serviciosSeleccionados.Any())
-                        {
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-megaphone me-2 text-muted"></i>
-                                        <span>Servicios Promocionales</span>
-                                    </div>
-                                    <strong>@serviciosSeleccionados.Sum(s => s.Precio).ToString("C")</strong>
-                                </div>
-                            </div>
-                        }
-
-                        <hr />
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-calculator me-2"></i>
-                                <strong>Total a Pagar</strong>
-                            </div>
-                            <h4 class="mb-0 text-primary">@CalcularTotal().ToString("C")</h4>
+                        <div>
+                            <h5 class="mb-0">Resumen de Costos</h5>
                         </div>
                     </div>
+
+                    @if (esUsuarioPeriodista)
+                    {
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-check-circle"></i> ¡Publicación Gratuita!
+                            </h6>
+                            <p class="mb-2">Como periodista, publica sin costo alguno.</p>
+                            <hr />
+                            <p class="mb-0">
+                                <i class="bi bi-cash-coin"></i>
+                                <strong>Ganancia por aprobación:</strong> 45% del precio base de la categoría
+                            </p>
+                            @if (precioBase > 0)
+                            {
+                                <p class="mb-0 mt-2">
+                                    <small class="text-muted">Categoría @categoriaNombre (RD$ @precioBase.ToString("N0"))</small><br />
+                                    <strong class="text-success fs-5">Recibirás: RD$ @((precioBase * 0.45m).ToString("N0"))</strong>
+                                </p>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <i class="bi bi-tag"></i>
+                                    <span class="ms-1">Precio Base</span>
+                                </div>
+                                <strong class="@(precioBase > 0 ? "text-dark" : "text-muted")">
+                                    @(precioBase > 0 ? $"RD$ {precioBase:N0}" : "$0.00")
+                                </strong>
+                            </div>
+                            @if (precioBase == 0)
+                            {
+                                <small class="text-muted d-block">No seleccionada</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted d-block">@categoriaNombre</small>
+                            }
+                        </div>
+
+                        @if (totalServicios > 0)
+                        {
+                            <div class="border-bottom pb-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-megaphone"></i>
+                                        <span class="ms-1">Servicios Promocionales</span>
+                                    </div>
+                                    <strong>RD$ @totalServicios.ToString("N0")</strong>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <i class="bi bi-calculator"></i>
+                                <span class="ms-1 fw-bold">Total a Pagar</span>
+                            </div>
+                            <h4 class="mb-0 text-primary">RD$ @((precioBase + totalServicios).ToString("N0"))</h4>
+                        </div>
+                    }
+
+                    <hr />
+
+                    <div class="alert @(esUsuarioPeriodista ? "alert-info" : "alert-warning") py-2 mb-0">
+                        <small>
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Estado:</strong> @(esUsuarioPeriodista ? "Pendiente de aprobación del editor" : "Pendiente de pago")
+                        </small>
+                    </div>
                 </div>
-
-               
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h6 class="mb-3">Acciones</h6>
-                        
-                        <button type="submit" class="btn btn-primary w-100 mb-2" @onclick="() => guardarComoBorrador = true">
-                            <i class="bi bi-save"></i> Guardar Borrador
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Acciones</h6>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary" @onclick="@(() => Guardar(EstadoArticulo.Borrador))">
+                            <i class="bi bi-download"></i> Guardar Borrador
                         </button>
-
-                        <button type="submit" class="btn btn-success w-100" @onclick="() => guardarComoBorrador = false">
+                        <button type="button" class="btn btn-success" @onclick="@(() => Guardar(EstadoArticulo.Pendiente))">
                             <i class="bi bi-send"></i> Enviar para Revisión
                         </button>
+                        <a href="/articulos" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
-    </EditForm>
 
-    @if (!string.IsNullOrEmpty(mensaje))
-    {
-        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-            <div class="alert alert-@tipoAlerta alert-dismissible fade show" role="alert">
-                @mensaje
-                <button type="button" class="btn-close" @onclick="() => mensaje = string.Empty"></button>
-            </div>
         </div>
-    }
+    </div>
 </div>
 
 @code {
-    [Parameter] public int Id { get; set; }
-    
+    [Parameter] public int ArticuloId { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? authenticationStateTask { get; set; }
+
     private Articulo articulo = new();
-    private List<Categoria> categorias = new();
-    private List<Periodista> periodistas = new();
-    private List<Institucion> instituciones = new();
-    private List<ServicioPromocional> serviciosPromocionales = new();
-    private List<ServicioPromocional> serviciosSeleccionados = new();
+    private List<Categoria> listaCategorias = new();
+    private List<Periodista> listaPeriodistas = new();
+    private List<ServicioPromocional> listaServiciosPromocionales = new();
     
+    private string errorMessage = string.Empty;
+    private string errorServicio = string.Empty;
+    private string nuevaImagen = string.Empty;
     private int servicioSeleccionadoId = 0;
-    private string nuevaImagenUrl = string.Empty;
-    private bool guardarComoBorrador = false;
     
-    private string mensaje = string.Empty;
-    private string tipoAlerta = "info";
+    private bool esUsuarioInstitucion;
+    private bool esUsuarioPeriodista;
+    private int institucionIdActual;
+    private int periodistaIdActual;
+    private string nombreInstitucion = string.Empty;
+    private string nombrePeriodista = string.Empty;
+
+    private decimal precioBase;
+    private decimal totalServicios;
+    private decimal tarifaPeriodista;
+    private string categoriaNombre = string.Empty;
+
+    private int selectedCategoriaId
+    {
+        get => articulo.CategoriaId;
+        set
+        {
+            articulo.CategoriaId = value;
+            RecalcularTotales();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarDatos();
-        
-        if (Id > 0)
+        listaCategorias = await CategoriaService.Listar();
+        listaPeriodistas = await PeriodistaService.Listar();
+        listaServiciosPromocionales = await ServicioPromocionalService.Listar();
+
+        if (authenticationStateTask != null)
         {
-            var articuloCompleto = await articuloService.GetArticuloCompleto(Id);
-            
-            if (articuloCompleto != null)
+            var authState = await authenticationStateTask;
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
             {
-                articulo = articuloCompleto;
-                
-              
-                serviciosSeleccionados = new List<ServicioPromocional>();
-                if (articulo.ServiciosPromocionales != null)
+                esUsuarioInstitucion = user.IsInRole(AppRoles.AdminInstitucion) || user.IsInRole(AppRoles.RedactorInstitucion);
+                esUsuarioPeriodista = user.IsInRole(AppRoles.Periodista);
+
+                if (esUsuarioInstitucion)
                 {
-                    foreach (var srv in articulo.ServiciosPromocionales)
-                    {
-                        if (srv.ServicioPromocional != null)
-                        {
-                            serviciosSeleccionados.Add(srv.ServicioPromocional);
-                        }
-                    }
+                    await CargarDatosInstitucion(user);
+                }
+                else if (esUsuarioPeriodista)
+                {
+                    await CargarDatosPeriodista(user);
                 }
             }
+        }
+
+        if (ArticuloId > 0)
+        {
+            articulo = await ArticuloService.GetArticuloCompleto(ArticuloId) ?? new Articulo();
+        }
+    }
+
+    private async Task CargarDatosInstitucion(ClaimsPrincipal user)
+    {
+        var institucionIdClaim = user.FindFirst("InstitucionId");
+    if (institucionIdClaim != null && int.TryParse(institucionIdClaim.Value, out int instId))
+    {
+        institucionIdActual = instId;
+    }
+    else
+    {
+    
+        var email = user.FindFirst(ClaimTypes.Email)?.Value;
+        if (!string.IsNullOrEmpty(email))
+        {
+            var appUser = await UserManager.FindByEmailAsync(email);
+            if (appUser?.InstitucionId != null)
+            {
+                institucionIdActual = appUser.InstitucionId.Value;
+            }
+        }
+    }
+
+    nombreInstitucion = user.FindFirst(ClaimTypes.Name)?.Value ?? "Institución";
+}
+    
+
+    private async Task CargarDatosPeriodista(ClaimsPrincipal user)
+    {
+       
+        var periodistaIdClaim = user.FindFirst("PeriodistaId");
+        if (periodistaIdClaim != null && int.TryParse(periodistaIdClaim.Value, out int perId))
+        {
+            periodistaIdActual = perId;
         }
         else
         {
-            articulo = new Articulo();
-            serviciosSeleccionados = new List<ServicioPromocional>();
-        }
-    }
-
-    private async Task CargarDatos()
-    {
-        categorias = await categoriaService.Listar();
-        periodistas = await periodistaService.Listar();
-        instituciones = await institucionService.Listar();
-        serviciosPromocionales = await servicioPromocionalService.Listar();
-    }
-
-    private async Task Guardar()
-    {
-        try
-        {
-       
-            if (!string.IsNullOrEmpty(articulo.Contenido))
+           
+            var email = user.FindFirst(ClaimTypes.Email)?.Value;
+            if (!string.IsNullOrEmpty(email))
             {
-                articulo.Resumen = articulo.Contenido.Length > 100 
-                    ? articulo.Contenido.Substring(0, 100) + "..." 
-                    : articulo.Contenido;
-            }
-
-       
-            if (articulo.ArticuloId == 0)
-            {
-                articulo.Estado = guardarComoBorrador ? EstadoArticulo.Borrador : EstadoArticulo.Pendiente;
-            }
-            
-            var resultado = await articuloService.Guardar(articulo);
-            
-            if (resultado)
-            {
-                
-                if (serviciosSeleccionados.Any() && articulo.ArticuloId == 0)
+                var appUser = await UserManager.FindByEmailAsync(email);
+                if (appUser?.PeriodistaId != null)
                 {
-                    using var contexto = await DbFactory.CreateDbContextAsync();
-                    var articuloGuardado = await contexto.Articulos
-                        .OrderByDescending(a => a.ArticuloId)
-                        .FirstOrDefaultAsync();
-                    
-                    if (articuloGuardado != null)
-                    {
-                        foreach (var srv in serviciosSeleccionados)
-                        {
-                            var articuloServicio = new ArticuloServicioPromocionales
-                            {
-                                ServicioPromocionalId = srv.ServicioPromocionalId,
-                                PrecioAplicado = srv.Precio
-                            };
-                            
-                            await articuloService.AgregarServicio(articuloGuardado.ArticuloId, articuloServicio);
-                        }
-                    }
+                    periodistaIdActual = appUser.PeriodistaId.Value;
                 }
-                
-                Navigation.NavigateTo("/articulos");
-            }
-            else
-            {
-                MostrarMensaje("No se pudo guardar el artículo", "danger");
             }
         }
-        catch (Exception ex)
+
+     
+        if (periodistaIdActual > 0)
         {
-            MostrarMensaje($"Error: {ex.Message}", "danger");
+            var periodista = await PeriodistaService.Buscar(periodistaIdActual);
+            if (periodista != null)
+            {
+                tarifaPeriodista = periodista.TarifaBase;
+                nombrePeriodista = periodista.Nombres;
+            }
         }
+
+        articulo.EsLibre = true;
+        articulo.PeriodistaId = periodistaIdActual;
+    }
+
+    private void AgregarServicio()
+    {
+        if (servicioSeleccionadoId <= 0)
+        {
+            errorServicio = "Debe seleccionar un servicio";
+            return;
+        }
+
+        var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == servicioSeleccionadoId);
+        if (servicio == null)
+        {
+            errorServicio = "Servicio no encontrado";
+            return;
+        }
+
+        if (articulo.ServiciosPromocionales.Any(s => s.ServicioPromocionalId == servicioSeleccionadoId))
+        {
+            errorServicio = "Este servicio ya ha sido agregado";
+            return;
+        }
+
+        articulo.ServiciosPromocionales.Add(new ArticuloServicioPromocionales
+        {
+            ServicioPromocionalId = servicioSeleccionadoId,
+            PrecioAplicado = servicio.Precio,
+            FechaAplicacion = DateTime.Now
+        });
+
+        servicioSeleccionadoId = 0;
+        errorServicio = string.Empty;
+        RecalcularTotales();
+    }
+
+    private void EliminarServicio(ArticuloServicioPromocionales servicio)
+    {
+        articulo.ServiciosPromocionales.Remove(servicio);
+        RecalcularTotales();
     }
 
     private void AgregarImagen()
     {
-        if (!string.IsNullOrWhiteSpace(nuevaImagenUrl))
+        if (!string.IsNullOrWhiteSpace(nuevaImagen))
         {
-            if (articulo.Imagenes == null)
-                articulo.Imagenes = new List<string>();
-            
-            articulo.Imagenes.Add(nuevaImagenUrl);
-            nuevaImagenUrl = string.Empty;
+            articulo.Imagenes.Add(nuevaImagen);
+            nuevaImagen = string.Empty;
         }
     }
 
-    private void EliminarImagen(int index)
+    private void EliminarImagen(string imagen) => articulo.Imagenes.Remove(imagen);
+
+    private void RecalcularTotales()
     {
-        if (articulo.Imagenes != null && index >= 0 && index < articulo.Imagenes.Count)
-        {
-            articulo.Imagenes.RemoveAt(index);
-        }
+        var categoria = listaCategorias.FirstOrDefault(c => c.CategoriaId == articulo.CategoriaId);
+        precioBase = categoria?.PrecioBase ?? 0;
+        categoriaNombre = categoria?.Nombre ?? "Sin categoría";
+
+        totalServicios = articulo.ServiciosPromocionales.Sum(s => s.PrecioAplicado);
+        tarifaPeriodista = 0;
     }
 
-    private void AgregarServicioTemporal()
+    private async Task Guardar(EstadoArticulo estado)
     {
-        if (servicioSeleccionadoId == 0)
+      
+        if (string.IsNullOrWhiteSpace(articulo.Titulo))
         {
-            MostrarMensaje("Seleccione un servicio", "warning");
+            errorMessage = "El título es requerido";
             return;
         }
 
-        var servicio = serviciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == servicioSeleccionadoId);
-        
-        if (servicio != null)
+        if (articulo.CategoriaId == 0)
         {
-            if (!serviciosSeleccionados.Any(s => s.ServicioPromocionalId == servicio.ServicioPromocionalId))
+            errorMessage = "Debe seleccionar una categoría";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(articulo.Contenido))
+        {
+            errorMessage = "El contenido es requerido";
+            return;
+        }
+
+        try
+        {
+           
+            articulo.Resumen = articulo.Contenido.Length > 200 
+                ? articulo.Contenido.Substring(0, 200) + "..." 
+                : articulo.Contenido;
+
+            articulo.Estado = estado;
+
+          
+            if (esUsuarioInstitucion)
             {
-                serviciosSeleccionados.Add(servicio);
-                servicioSeleccionadoId = 0;
-                MostrarMensaje("Servicio agregado correctamente", "success");
+                articulo.InstitucionId = institucionIdActual;
+                articulo.PeriodistaId = null;
+            }
+            else if (esUsuarioPeriodista)
+            {
+                articulo.PeriodistaId = periodistaIdActual;
+                articulo.InstitucionId = null;
+            }
+
+            var guardado = await ArticuloService.Guardar(articulo);
+
+            if (guardado)
+            {
+                navigationManager.NavigateTo("/articulos");
             }
             else
             {
-                MostrarMensaje("Este servicio ya fue agregado", "warning");
+                errorMessage = "No se pudo guardar el artículo";
             }
         }
-    }
-
-    private void EliminarServicioTemporal(int servicioId)
-    {
-        var servicio = serviciosSeleccionados.FirstOrDefault(s => s.ServicioPromocionalId == servicioId);
-        if (servicio != null)
+        catch (Exception ex)
         {
-            serviciosSeleccionados.Remove(servicio);
+            errorMessage = $"Error al guardar: {ex.Message}";
         }
-    }
-
-    private void Volver()
-    {
-        Navigation.NavigateTo("/articulos");
-    }
-
-    private string ObtenerNombreCategoria()
-    {
-        var categoria = categorias.FirstOrDefault(c => c.CategoriaId == articulo.CategoriaId);
-        return categoria?.Nombre ?? "No seleccionada";
-    }
-
-    private decimal ObtenerPrecioCategoria()
-    {
-        var categoria = categorias.FirstOrDefault(c => c.CategoriaId == articulo.CategoriaId);
-        return categoria?.PrecioBase ?? 0;
-    }
-
-    private string ObtenerNombrePeriodista()
-    {
-        var periodista = periodistas.FirstOrDefault(p => p.PeriodistaId == articulo.PeriodistaId);
-        return periodista?.Nombres ?? "";
-    }
-
-    private decimal ObtenerTarifaPeriodista()
-    {
-        var periodista = periodistas.FirstOrDefault(p => p.PeriodistaId == articulo.PeriodistaId);
-        return periodista?.TarifaBase ?? 0;
-    }
-
-    private decimal CalcularTotal()
-    {
-        decimal total = ObtenerPrecioCategoria();
-        if(articulo.PeriodistaId.HasValue){
-            total+=ObtenerTarifaPeriodista();
-        }
-        
-        if (serviciosSeleccionados != null)
-        {
-            total += serviciosSeleccionados.Sum(s => s.Precio);
-        }
-        
-        return total;
-    }
-
-    private void MostrarMensaje(string msg, string tipo)
-    {
-        mensaje = msg;
-        tipoAlerta = tipo;
     }
 }

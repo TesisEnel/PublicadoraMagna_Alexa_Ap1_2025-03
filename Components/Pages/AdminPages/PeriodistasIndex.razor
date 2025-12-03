@@ -1,8 +1,6 @@
 @page "/admin/periodistas"
 @using Microsoft.EntityFrameworkCore
-@using PublicadoraMagna.Data
-@using PublicadoraMagna.Model
-@using PublicadoraMagna.Services
+
 @using Microsoft.AspNetCore.Identity
 @inject PeriodistaService PeriodistaService
 @inject UserManager<ApplicationUser> UserManager
@@ -30,7 +28,7 @@
     }
     else
     {
-        <!-- Resumen -->
+       
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card text-white bg-primary">
@@ -66,7 +64,7 @@
             </div>
         </div>
 
-        <!-- Buscador -->
+     
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row">
@@ -85,7 +83,7 @@
             </div>
         </div>
 
-        <!-- Lista de Periodistas -->
+  
         @if (!PeriodistasFiltrados().Any())
         {
             <div class="alert alert-info">

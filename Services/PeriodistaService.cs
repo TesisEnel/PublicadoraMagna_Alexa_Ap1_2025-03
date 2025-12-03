@@ -34,6 +34,8 @@ public class PeriodistaService(IDbContextFactory<ApplicationDbContext> dbFactory
         if (!guardado)
             return false;
 
+        await contexto.Entry(periodista).ReloadAsync();
+
         // Crear el usuario
         var user = new ApplicationUser
         {

@@ -133,7 +133,7 @@
 
         var prelista = await EncargoService.GetLista(e => e.PeriodistaId == periodistaIdActual);
 
-        // Filtrar por fechas
+        
         if (desde.HasValue && hasta.HasValue)
         {
             prelista = prelista.Where(e => e.FechaCreacion.Date >= desde.Value.Date && e.FechaCreacion.Date <= hasta.Value.Date).ToList();
@@ -147,7 +147,7 @@
             prelista = prelista.Where(e => e.FechaCreacion.Date <= hasta.Value.Date).ToList();
         }
 
-        // Filtrar por estado
+        
         if (!string.IsNullOrWhiteSpace(FiltroEstado))
         {
             if (Enum.TryParse<EstadoArticulo>(FiltroEstado, out var estado))
@@ -156,7 +156,7 @@
             }
         }
 
-        // Búsqueda por título, categoría o tipo
+        
         if (!string.IsNullOrWhiteSpace(ValorBusqueda))
         {
             prelista = prelista.Where(e =>

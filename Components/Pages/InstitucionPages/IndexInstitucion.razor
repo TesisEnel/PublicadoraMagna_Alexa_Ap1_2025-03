@@ -1,0 +1,161 @@
+﻿@page "/institucion/dashboard"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Identity
+@using PublicadoraMagna.Model
+@inject EncargoArticuloService EncargoService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Encargos Institución</PageTitle>
+
+<div class="container">
+    <div class="card shadow-lg">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title">Encargos Enviados</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="@(() => NavigationManager.NavigateTo("/institucion/encargos/crear"))">
+                    <i class="bi bi-file-earmark-plus"></i> Crear Encargo
+                </button>
+                <button class="btn btn-success" @onclick="@(() => NavigationManager.NavigateTo("/articulos/crear"))">
+                    <i class="bi bi-file-earmark-text"></i> Crear Artículo
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row mb-3">
+                <div class="col-3">
+                    <label><strong>Desde</strong></label>
+                    <InputDate class="form-control" @bind-Value="desde"></InputDate>
+                </div>
+
+                <div class="col-3">
+                    <label><strong>Hasta</strong></label>
+                    <InputDate class="form-control" @bind-Value="hasta"></InputDate>
+                </div>
+
+                <div class="col-3">
+                    <label><strong>Filtrar por</strong></label>
+                    <InputSelect class="form-select" @bind-Value="Filtro">
+                        <option value="" selected disabled>Selecciona una opción</option>
+                        <option value="Titulo">Título</option>
+                        <option value="Categoria">Categoría</option>
+                        <option value="Periodista">Periodista</option>
+                        <option value="Estado">Estado</option>
+                    </InputSelect>
+                </div>
+
+                <div class="col-3">
+                    <label><strong>Búsqueda</strong></label>
+                    <div class="input-group">
+                        <input class="form-control" @bind="ValorFiltro" placeholder="Buscar" />
+                        <button type="button" class="btn btn-outline-primary bi bi-search" @onclick="Buscar"></button>
+                    </div>
+                </div>
+            </div>
+
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Periodista</th>
+                        <th>Estado</th>
+                        <th>Comentario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var encargo in ListaEncargos)
+                    {
+                        <tr>
+                            <td>@encargo.EncargoArticuloId</td>
+                            <td>@encargo.FechaCreacion.ToShortDateString()</td>
+                            <td>@encargo.TituloSugerido</td>
+                            <td>@encargo.Categoria?.Nombre</td>
+                            <td>@encargo.Periodista?.Nombres</td>
+                            <td>@encargo.Estado.ToString()</td>
+                            <td>@encargo.ComentarioRechazo</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+            <label>Conteo: @ListaEncargos.Count()</label>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<EncargoArticulo> ListaEncargos { get; set; } = new List<EncargoArticulo>();
+    private string Filtro { get; set; }
+    private string ValorFiltro { get; set; }
+    private DateTime? desde { get; set; } = null;
+    private DateTime? hasta { get; set; } = null;
+    private int institucionIdActual = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var email = user.FindFirst(ClaimTypes.Email)?.Value;
+            if (!string.IsNullOrEmpty(email))
+            {
+                var appUser = await UserManager.FindByEmailAsync(email);
+                if (appUser?.InstitucionId != null)
+                    institucionIdActual = appUser.InstitucionId.Value;
+            }
+        }
+
+        await CargarEncargos();
+    }
+
+    private async Task CargarEncargos()
+    {
+        if (institucionIdActual > 0)
+        {
+            ListaEncargos = await EncargoService.GetLista(e => e.InstitucionId == institucionIdActual);
+        }
+    }
+
+    private async Task Buscar()
+    {
+        var prelista = await EncargoService.GetLista(e => e.InstitucionId == institucionIdActual);
+
+        // Filtrar por fechas
+        if (desde.HasValue && hasta.HasValue)
+            prelista = prelista.Where(e => e.FechaCreacion.Date >= desde.Value.Date && e.FechaCreacion.Date <= hasta.Value.Date).ToList();
+
+        if (desde.HasValue && !hasta.HasValue)
+            prelista = prelista.Where(e => e.FechaCreacion.Date >= desde.Value.Date).ToList();
+
+        if (hasta.HasValue && !desde.HasValue)
+            prelista = prelista.Where(e => e.FechaCreacion.Date <= hasta.Value.Date).ToList();
+
+        // Filtrar por texto
+        if (!string.IsNullOrWhiteSpace(ValorFiltro))
+        {
+            prelista = Filtro switch
+            {
+                "Titulo" => prelista.Where(e => e.TituloSugerido.ToLower().Contains(ValorFiltro.ToLower())).ToList(),
+                "Categoria" => prelista.Where(e => e.Categoria != null && e.Categoria.Nombre.ToLower().Contains(ValorFiltro.ToLower())).ToList(),
+                "Periodista" => prelista.Where(e => e.Periodista != null && e.Periodista.Nombres.ToLower().Contains(ValorFiltro.ToLower())).ToList(),
+                "Estado" => prelista.Where(e => e.Estado.ToString().ToLower().Contains(ValorFiltro.ToLower())).ToList(),
+                _ => prelista
+            };
+        }
+
+        ListaEncargos = prelista;
+    }
+}

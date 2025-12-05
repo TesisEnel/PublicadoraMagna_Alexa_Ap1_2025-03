@@ -2,7 +2,7 @@
 
 @using Microsoft.AspNetCore.Identity
 @inject InstitucionService InstitucionService
-@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager navigationManager
 @rendermode InteractiveServer
 
@@ -29,7 +29,7 @@
                     @if (registroExitoso)
                     {
                         <div class="alert alert-success">
-                            <i class="bi bi-check-circle"></i> ¡Registro exitoso! Redirigiendo a tu panel...
+                            <i class="bi bi-check-circle"></i> ¡Registro exitoso! Redirigiendo al login...
                         </div>
                     }
                     else
@@ -143,15 +143,15 @@
 </div>
 
 @code {
-    public Institucion institucion { get; set; } = new Institucion();
-    public string nombreAdmin { get; set; } = string.Empty;
-    public string emailAdmin { get; set; } = string.Empty;
-    public string password { get; set; } = string.Empty;
-    public string confirmarPassword { get; set; } = string.Empty;
-    public bool aceptaTerminos { get; set; } = false;
-    public string errorMessage { get; set; } = string.Empty;
-    public bool registrando { get; set; } = false;
-    public bool registroExitoso { get; set; } = false;
+    private Institucion institucion = new();
+    private string nombreAdmin = string.Empty;
+    private string emailAdmin = string.Empty;
+    private string password = string.Empty;
+    private string confirmarPassword = string.Empty;
+    private bool aceptaTerminos;
+    private string errorMessage = string.Empty;
+    private bool registrando;
+    private bool registroExitoso;
 
     private async Task Registrarse()
     {
@@ -164,53 +164,40 @@
             if (string.IsNullOrWhiteSpace(institucion.Nombre))
             {
                 errorMessage = "El nombre de la institución es requerido";
-                registrando = false;
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(nombreAdmin))
             {
                 errorMessage = "Tu nombre completo es requerido";
-                registrando = false;
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(emailAdmin))
             {
                 errorMessage = "El email es requerido";
-                registrando = false;
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                errorMessage = "La contraseña es requerida";
-                registrando = false;
-                return;
-            }
-
-            if (password.Length < 6)
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
             {
                 errorMessage = "La contraseña debe tener al menos 6 caracteres";
-                registrando = false;
                 return;
             }
 
             if (password != confirmarPassword)
             {
                 errorMessage = "Las contraseñas no coinciden";
-                registrando = false;
                 return;
             }
 
             if (!aceptaTerminos)
             {
                 errorMessage = "Debes aceptar los términos y condiciones";
-                registrando = false;
                 return;
             }
 
-           
+            // Crear institución y usuario
             var creado = await InstitucionService.CrearConAdministrador(
                 institucion,
                 nombreAdmin,
@@ -221,30 +208,20 @@
             if (!creado)
             {
                 errorMessage = "No se pudo completar el registro. El email podría estar ya registrado.";
-                registrando = false;
                 return;
             }
 
-       
-            var user = await SignInManager.UserManager.FindByEmailAsync(emailAdmin);
-            if (user != null)
-            {
-                await SignInManager.SignInAsync(user, isPersistent: false);
-                registroExitoso = true;
-
-               
-             
-                navigationManager.NavigateTo("/institucion/dashboard", forceLoad: true);
-            }
-            else
-            {
-               
-                navigationManager.NavigateTo("/Account/Login");
-            }
+            // Registro exitoso - redirigir a login
+            registroExitoso = true;
+            await Task.Delay(1500);
+            navigationManager.NavigateTo("/Account/Login", forceLoad: true);
         }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
             registrando = false;
         }
     }

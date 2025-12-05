@@ -215,8 +215,8 @@
             {
                 await SignInManager.SignInAsync(user, isPersistent: false);
                 registroExitoso = true;
-              
-                navigationManager.NavigateTo("/periodista/dashboard", forceLoad: true);
+                await Task.Yield();
+                navigationManager.NavigateTo("/periodista/dashboard");
             }
             else
             {

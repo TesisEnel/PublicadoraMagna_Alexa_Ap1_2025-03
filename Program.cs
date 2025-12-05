@@ -1,16 +1,18 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using PublicadoraMagna.Components;
 using PublicadoraMagna.Components.Account;
 using PublicadoraMagna.Data;
 using PublicadoraMagna.Services;
+using System.Threading.Tasks;
 
 namespace PublicadoraMagna
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -30,15 +32,23 @@ namespace PublicadoraMagna
                 .AddIdentityCookies();
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
+
+            builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+              options.UseSqlServer(connectionString));
+
+            //builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            //    options.UseSqlServer(connectionString));
+
+
+
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options =>
                 {
                     options.SignIn.RequireConfirmedAccount = true;
                     options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-                })
+                }).AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
 
 
@@ -47,9 +57,11 @@ namespace PublicadoraMagna
                 .AddDefaultTokenProviders();
 
             builder.Services.AddScoped<CategoriaService>();
+            builder.Services.AddScoped<ArticuloService>();
             builder.Services.AddScoped<InstitucionService>();
             builder.Services.AddScoped<PeriodistaService>();
             builder.Services.AddScoped<ServicioPromocionalService>();
+            builder.Services.AddScoped<PagoService>();
 
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
@@ -80,6 +92,21 @@ namespace PublicadoraMagna
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
 
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var admin=scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+                var roles = new[] {"Admin","Periodista","Editor","AdminInstitucion","RedactorInstitucion" };
+
+                foreach(var role in roles)
+                {
+                    if(!await admin.RoleExistsAsync(role))
+                    {
+                        await admin.CreateAsync(new IdentityRole(role));
+                    }
+                }
+            }
             app.Run();
         }
     }

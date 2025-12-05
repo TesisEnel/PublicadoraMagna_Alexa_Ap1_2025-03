@@ -41,4 +41,12 @@ public class CategoriaService(IDbContextFactory<ApplicationDbContext> dbFactory)
         using var contexto=await dbFactory.CreateDbContextAsync();
         return await contexto.Categorias.AnyAsync(c=>c.CategoriaId==id);
     }
+
+    public async Task<List<Categoria>> Listar()
+    {
+        using var contexto = await dbFactory.CreateDbContextAsync();
+        return await contexto.Categorias
+            .OrderBy(c => c.Nombre)
+            .ToListAsync();
+    }
 }

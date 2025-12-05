@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PublicadoraMagna.Data;
 
@@ -11,9 +12,11 @@ using PublicadoraMagna.Data;
 namespace PublicadoraMagna.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251128205603_EmailPeriodista")]
+    partial class EmailPeriodista
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -195,18 +198,11 @@ namespace PublicadoraMagna.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("InstitucionId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NombreCompleto")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -218,9 +214,6 @@ namespace PublicadoraMagna.Migrations
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("PeriodistaId")
-                        .HasColumnType("int");
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(256)
@@ -241,8 +234,6 @@ namespace PublicadoraMagna.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InstitucionId");
-
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -250,8 +241,6 @@ namespace PublicadoraMagna.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.HasIndex("PeriodistaId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -305,8 +294,7 @@ namespace PublicadoraMagna.Migrations
 
                     b.Property<string>("Titulo")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ArticuloId");
 
@@ -361,8 +349,7 @@ namespace PublicadoraMagna.Migrations
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("PrecioBase")
                         .HasColumnType("decimal(18,2)");
@@ -434,31 +421,26 @@ namespace PublicadoraMagna.Migrations
 
                     b.Property<string>("CorreoContacto")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EmailAdmin")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("FechaRegistro")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Rnc")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Telefono")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("InstitucionId");
 
@@ -475,8 +457,7 @@ namespace PublicadoraMagna.Migrations
 
                     b.Property<string>("Estado")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("FechaPago")
                         .HasColumnType("datetime2");
@@ -504,8 +485,7 @@ namespace PublicadoraMagna.Migrations
 
                     b.Property<string>("Estado")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
@@ -536,17 +516,14 @@ namespace PublicadoraMagna.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("EsActivo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("FechaRegistro")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Nombres")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TarifaBase")
                         .HasColumnType("decimal(18,2)");
@@ -573,8 +550,7 @@ namespace PublicadoraMagna.Migrations
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(18,2)");
@@ -582,6 +558,74 @@ namespace PublicadoraMagna.Migrations
                     b.HasKey("ServicioPromocionalId");
 
                     b.ToTable("ServiciosPromocionales");
+                });
+
+            modelBuilder.Entity("PublicadoraMagna.Model.Usuario", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("InstitucionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RolSistema")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstitucionId");
+
+                    b.ToTable("Usuario");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -684,40 +728,21 @@ namespace PublicadoraMagna.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PublicadoraMagna.Data.ApplicationUser", b =>
-                {
-                    b.HasOne("PublicadoraMagna.Model.Institucion", "Institucion")
-                        .WithMany("Usuarios")
-                        .HasForeignKey("InstitucionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PublicadoraMagna.Model.Periodista", "Periodistas")
-                        .WithMany()
-                        .HasForeignKey("PeriodistaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Institucion");
-
-                    b.Navigation("Periodistas");
-                });
-
             modelBuilder.Entity("PublicadoraMagna.Model.Articulo", b =>
                 {
                     b.HasOne("PublicadoraMagna.Model.Categoria", "Categoria")
                         .WithMany()
                         .HasForeignKey("CategoriaId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PublicadoraMagna.Model.Institucion", "Institucion")
                         .WithMany("Articulos")
-                        .HasForeignKey("InstitucionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("InstitucionId");
 
                     b.HasOne("PublicadoraMagna.Model.Periodista", "Periodista")
                         .WithMany("Articulos")
-                        .HasForeignKey("PeriodistaId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("PeriodistaId");
 
                     b.Navigation("Categoria");
 
@@ -737,7 +762,7 @@ namespace PublicadoraMagna.Migrations
                     b.HasOne("PublicadoraMagna.Model.ServicioPromocional", "ServicioPromocional")
                         .WithMany()
                         .HasForeignKey("ServicioPromocionalId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Articulo");
@@ -750,7 +775,7 @@ namespace PublicadoraMagna.Migrations
                     b.HasOne("PublicadoraMagna.Model.Articulo", "Articulo")
                         .WithMany()
                         .HasForeignKey("ArticuloId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PublicadoraMagna.Model.PagoInstitucion", "Pago")
@@ -769,7 +794,7 @@ namespace PublicadoraMagna.Migrations
                     b.HasOne("PublicadoraMagna.Model.Articulo", "Articulo")
                         .WithMany()
                         .HasForeignKey("ArticuloId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PublicadoraMagna.Model.PagoPeriodista", "Pago")
@@ -788,7 +813,7 @@ namespace PublicadoraMagna.Migrations
                     b.HasOne("PublicadoraMagna.Model.Institucion", "Institucion")
                         .WithMany()
                         .HasForeignKey("InstitucionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Institucion");
@@ -799,10 +824,19 @@ namespace PublicadoraMagna.Migrations
                     b.HasOne("PublicadoraMagna.Model.Periodista", "Periodista")
                         .WithMany()
                         .HasForeignKey("PeriodistaId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Periodista");
+                });
+
+            modelBuilder.Entity("PublicadoraMagna.Model.Usuario", b =>
+                {
+                    b.HasOne("PublicadoraMagna.Model.Institucion", "Institucion")
+                        .WithMany("Usuarios")
+                        .HasForeignKey("InstitucionId");
+
+                    b.Navigation("Institucion");
                 });
 
             modelBuilder.Entity("PublicadoraMagna.Model.Articulo", b =>

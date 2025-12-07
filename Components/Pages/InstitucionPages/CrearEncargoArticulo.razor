@@ -12,34 +12,46 @@
 
 <PageTitle>Crear Encargo</PageTitle>
 
-<div class="container-fluid py-4">
+<div class="page-header text-white py-4 mb-4">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 fw-bold mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    Crear Encargo de Artículo
+                </h1>
+            </div>
+            <div>
+                <a href="/institucion/encargos" class="text-white text-decoration-none opacity-75">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+        </div>
+    }
+
     <div class="row">
         <div class="col-lg-8">
-            
-            <h3 class="mb-4">
-                <i class="bi bi-file-earmark-text"></i> Crear Encargo de Artículo
-            </h3>
-
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @errorMessage
-                    <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
-                </div>
-            }
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
-                            <i class="bi bi-info-circle text-primary fs-4"></i>
-                        </div>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="section-header">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-info-circle fs-4 me-3"></i>
                         <div>
-                            <h5 class="mb-0">Datos del Encargo</h5>
-                            <small class="text-muted">Información que recibirá el periodista</small>
+                            <h5 class="mb-0 fw-bold">Datos del Encargo</h5>
+                            <small class="opacity-75">Información que recibirá el periodista</small>
                         </div>
                     </div>
-
+                </div>
+                <div class="card-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Título Sugerido <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" @bind="encargo.TituloSugerido" placeholder="Título del artículo" />
@@ -47,7 +59,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Descripción del Encargo</label>
-                        <textarea class="form-control" rows="4" @bind="encargo.DescripcionEncargo" 
+                        <textarea class="form-control" rows="4" @bind="encargo.DescripcionEncargo"
                                   placeholder="Describe lo que necesitas en el artículo, enfoque, puntos a cubrir, etc."></textarea>
                     </div>
 
@@ -74,19 +86,17 @@
                     </div>
                 </div>
             </div>
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-warning bg-opacity-10 p-2 rounded me-3">
-                            <i class="bi bi-megaphone text-warning fs-4"></i>
-                        </div>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="section-header">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-megaphone fs-4 me-3"></i>
                         <div>
-                            <h5 class="mb-0">Servicios Promocionales</h5>
-                            <small class="text-muted">Opcional - Servicios adicionales para el artículo</small>
+                            <h5 class="mb-0 fw-bold">Servicios Promocionales</h5>
+                            <small class="opacity-75">Opcional - Servicios adicionales para el artículo</small>
                         </div>
                     </div>
-
+                </div>
+                <div class="card-body p-4">
                     <div class="row mb-3">
                         <div class="col-md-8">
                             <label class="form-label fw-semibold">Servicio</label>
@@ -99,8 +109,8 @@
                             </select>
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
-                            <button type="button" class="btn btn-primary w-100" @onclick="AgregarServicio">
-                                <i class="bi bi-plus-circle"></i> Agregar
+                            <button type="button" class="btn btn-orange w-100" @onclick="AgregarServicio">
+                                <i class="bi bi-plus-circle me-2"></i>Agregar
                             </button>
                         </div>
                     </div>
@@ -122,7 +132,7 @@
                                         var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == detalle.ServicioPromocionalId);
                                         <tr>
                                             <td>@(servicio?.Nombre ?? "N/A")</td>
-                                            <td class="text-end">RD$ @detalle.PrecioAplicado.ToString("N0")</td>
+                                            <td class="text-endfw-semibold ">RD$ @detalle.PrecioAplicado.ToString("N0")</td>
                                             <td class="text-end">
                                                 <button type="button" class="btn btn-sm btn-danger" @onclick="() => EliminarServicio(detalle)">
                                                     <i class="bi bi-trash"></i>
@@ -136,103 +146,70 @@
                     }
                 </div>
             </div>
-
         </div>
 
         <div class="col-lg-4">
-            
-            <div class="card mb-4 sticky-top" style="top: 20px;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-success bg-opacity-10 p-2 rounded me-3">
-                            <i class="bi bi-currency-dollar text-success fs-4"></i>
-                        </div>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                   
+                    <div class="d-flex justify-content-between align-items-start mb-4">
                         <div>
-                            <h5 class="mb-0">Resumen de Costos</h5>
+                            <h4 class="mb-1 fw-bold">Resumen de Costos</h4>
+                         
                         </div>
+                        <span class="badge badge-orange px-3 py-2 rounded-pill">
+                            Pendiente
+                        </span>
                     </div>
 
-                    <div class="border-bottom pb-2 mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <i class="bi bi-tag"></i>
-                                <span class="ms-1">Precio Base</span>
-                            </div>
-                            <strong class="@(precioBase > 0 ? "text-dark" : "text-muted")">
-                                @(precioBase > 0 ? $"RD$ {precioBase:N0}" : "$0.00")
-                            </strong>
-                        </div>
-                        @if (precioBase == 0)
+                    <hr class="my-4">
+                    <div class="mb-4">
+                        @if (precioBase > 0)
                         {
-                            <small class="text-muted d-block">No seleccionada</small>
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span>Precio base categoría</span>
+                                <strong>RD$ @precioBase.ToString("N2")</strong>
+                            </div>
                         }
-                        else
+
+                        @foreach (var detalle in encargo.ServiciosPromocionales)
                         {
-                            <small class="text-muted d-block">@categoriaNombre</small>
+                            var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == detalle.ServicioPromocionalId);
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span>@(servicio?.Nombre ?? "Servicio")</span>
+                                <strong>RD$ @detalle.PrecioAplicado.ToString("N2")</strong>
+                            </div>
+                        }
+
+                        @if (tarifaPeriodista > 0)
+                        {
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span>Tarifa periodista</span>
+                                <strong>RD$ @tarifaPeriodista.ToString("N2")</strong>
+                            </div>
                         }
                     </div>
 
-                    @if (totalServicios > 0)
-                    {
-                        <div class="border-bottom pb-2 mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi bi-megaphone"></i>
-                                    <span class="ms-1">Servicios Promocionales</span>
-                                </div>
-                                <strong>RD$ @totalServicios.ToString("N0")</strong>
-                            </div>
-                        </div>
-                    }
-
-                    @if (tarifaPeriodista > 0)
-                    {
-                        <div class="border-bottom pb-2 mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi bi-person"></i>
-                                    <span class="ms-1">Pago Periodista</span>
-                                </div>
-                                <strong>RD$ @tarifaPeriodista.ToString("N0")</strong>
-                            </div>
-                            <small class="text-muted d-block">@nombrePeriodista</small>
-                        </div>
-                    }
-
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div>
-                            <i class="bi bi-calculator"></i>
-                            <span class="ms-1 fw-bold">Total a Pagar</span>
-                        </div>
-                        <h4 class="mb-0 text-primary">RD$ @((precioBase + totalServicios + tarifaPeriodista).ToString("N0"))</h4>
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0 fw-bold">Total</h5>
+                        <h4 class="mb-0 fw-bold text-success">RD$ @((precioBase + totalServicios + tarifaPeriodista).ToString("N2"))</h4>
                     </div>
 
-                    <hr />
-
-                    <div class="alert alert-info py-2 mb-0">
-                        <small>
-                            <i class="bi bi-info-circle"></i>
-                            El periodista debe aceptar el encargo antes de comenzar
-                        </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="mb-3">Acciones</h6>
-                    
+                   
                     <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-success" @onclick="EnviarEncargo">
-                            <i class="bi bi-send"></i> Enviar Encargo
+                        <button type="button" class="btn btn-orange" @onclick="EnviarEncargo">
+                            <i class="bi bi-send me-2"></i>Enviar Encargo
+                        </button>
+                        <button type="button" class="btn btn-green">
+                            <i class="bi bi-save me-2"></i>Guardar Borrador
                         </button>
                         <a href="/institucion/encargos" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-x me-2"></i>Cancelar
                         </a>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
@@ -404,3 +381,42 @@
         }
     }
 }
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #2d5f4d 0%, #103713 100%);
+    }
+
+    .section-header {
+        background: linear-gradient(135deg, #2d5f4d 0%, #103713 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .btn-orange {
+        background-color: #e65100;
+        color: white;
+        border: none;
+    }
+
+        .btn-orange:hover {
+            background-color: #bf360c;
+            color: white;
+        }
+
+    .btn-green {
+        background-color: #2d5f4d;
+        color: white;
+        border: none;
+    }
+
+        .btn-green:hover {
+            background-color: #103713;
+            color: white;
+        }
+
+    .badge-orange {
+        background: #fff3e0;
+        color: #e65100;
+    }
+</style>

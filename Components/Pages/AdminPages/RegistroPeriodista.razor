@@ -8,105 +8,124 @@
 
 <PageTitle>Registrar Periodista</PageTitle>
 
+
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-success text-white text-center">
-                    <h3>Únete como Periodista</h3>
-                    <p class="mb-0">Publica tus artículos y genera ingresos</p>
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-lg">
+                <div class="bg-gradient-green text-white text-center py-4 rounded-top">
+                    <h3 class="fw-bold mb-2">Únete como Periodista</h3>
+                    <p class="mb-0 opacity-75">Publica tus artículos y genera ingresos</p>
                 </div>
 
                 <div class="card-body p-4">
                     @if (!string.IsNullOrEmpty(errorMessage))
                     {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i> @errorMessage
-                            <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+                        <div class="alert alert-danger border-0 d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <div>@errorMessage</div>
                         </div>
                     }
 
                     @if (registroExitoso)
                     {
-                        <div class="alert alert-success">
-                            <i class="bi bi-check-circle"></i> ¡Registro exitoso! Redirigiendo a tu panel...
+                        <div class="alert alert-success border-0 d-flex align-items-center">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <div>¡Registro exitoso! Redirigiendo a tu panel...</div>
                         </div>
                     }
                     else
                     {
-                      
                         <div class="mb-4">
-                            <h5 class="border-bottom pb-2">
-                                <i class="bi bi-person"></i> Tus Datos
-                            </h5>
-                            
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="section-icon bg-warning bg-opacity-10 text-warning me-2">
+                                    <i class="bi bi-person fs-5"></i>
+                                </div>
+                                <h6 class="mb-0 fw-semibold">Tus Datos</h6>
+                            </div>
+
                             <div class="mb-3">
-                                <label class="form-label">Nombre Completo <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" @bind="periodista.Nombres" 
+                                <label class="form-label fw-semibold">Nombre Completo <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" @bind="periodista.Nombres"
                                        placeholder="Ej: María García López" />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Tarifa Base (RD$) <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" @bind="periodista.TarifaBase" 
-                                       placeholder="Ej: 7000" />
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> Esta es la tarifa que cobrarás por cada artículo publicado
+                                <label class="form-label fw-semibold">Tarifa Base (RD$) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="color: #e65100;"><i class="bi bi-currency-dollar"></i></span>
+                                    <input type="number" class="form-control" @bind="periodista.TarifaBase"
+                                           placeholder="0" />
+                                </div>
+                                <small class="text-muted d-flex align-items-start mt-1">
+                                    <i class="bi bi-info-circle me-1 mt-1" style="color: #e65100;"></i>
+                                    <span>Esta es la tarifa que cobrarás por cada artículo publicado</span>
                                 </small>
                             </div>
                         </div>
 
-                     
+                        <hr>
                         <div class="mb-4">
-                            <h5 class="border-bottom pb-2">
-                                <i class="bi bi-key"></i> Datos de Acceso
-                            </h5>
-                            
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="section-icon bg-success bg-opacity-10 text-success me-2">
+                                    <i class="bi bi-key fs-5"></i>
+                                </div>
+                                <h6 class="mb-0 fw-semibold">Datos de Acceso</h6>
+                            </div>
+
                             <div class="mb-3">
-                                <label class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" @bind="email" 
-                                       placeholder="Ej: maria.garcia@ejemplo.com" />
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> Usarás este email para iniciar sesión
+                                <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control" @bind="email"
+                                           placeholder="Periodista@gmail.com" />
+                                </div>
+                                <small class="text-muted d-flex align-items-start mt-1">
+                                    <i class="bi bi-info-circle me-1 mt-1" style="color: #e65100;"></i>
+                                    <span>Usarás este email para iniciar sesión</span>
                                 </small>
                             </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Contraseña <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" @bind="password" />
-                                    <small class="text-muted">Mínimo 6 caracteres</small>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input type="password" class="form-control" @bind="password" placeholder="••••••••" />
+                                    <button class="btn btn-outline-secondary" type="button">
+                                     
+                                    </button>
                                 </div>
+                                <small class="text-muted">Mínimo 6 caracteres</small>
+                            </div>
 
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" @bind="confirmarPassword" />
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input type="password" class="form-control" @bind="confirmarPassword" placeholder="••••••••" />
+                                    <button class="btn btn-outline-secondary" type="button">
+                                     
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                    
-                        <div class="mb-3">
+                       
+                        <div class="bg-light p-3 rounded mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="aceptaTerminos" @bind="aceptaTerminos">
-                                <label class="form-check-label" for="aceptaTerminos">
-                                    Acepto los <a href="/terminos" target="_blank">términos y condiciones</a> 
-                                    y la <a href="/privacidad" target="_blank">política de privacidad</a>
+                                <label class="form-check-label small" for="aceptaTerminos">
+                                    Acepto los <a href="/terminos" class="text-decoration-none" style="color: #e65100;">términos y condiciones</a>
+                                    y la <a href="/privacidad" class="text-decoration-none" style="color: #e65100;">política de privacidad</a>
                                 </label>
                             </div>
                         </div>
 
-                        <small class="text-muted d-block mb-3">
-                            <span class="text-danger">*</span> Campos obligatorios
+                        <small class="text-danger d-block mb-3">
+                            * Campos obligatorios
                         </small>
-                    }
-                </div>
-
-                <div class="card-footer bg-light">
-                    @if (!registroExitoso)
-                    {
-                        <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-success btn-lg" @onclick="Registrarse" disabled="@registrando">
+                        <div class="d-grid mb-3">
+                            <button type="button" class="btn btn-orange btn-lg py-3" @onclick="Registrarse" disabled="@registrando">
                                 @if (registrando)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
@@ -114,14 +133,15 @@
                                 }
                                 else
                                 {
-                                    <i class="bi bi-check-circle"></i>
+                                    <i class="bi bi-check-circle me-2"></i>
                                     <span>Registrarme como Periodista</span>
                                 }
                             </button>
                         </div>
-                        <div class="text-center mt-3">
-                            <small>
-                                ¿Ya tienes cuenta? <a href="/Account/Login">Inicia sesión aquí</a>
+
+                        <div class="text-center">
+                            <small class="text-muted">
+                                ¿Ya tienes cuenta? <a href="/Account/Login" class="text-decoration-none" style="color: #e65100;">Inicia sesión aquí</a>
                             </small>
                         </div>
                     }
@@ -130,6 +150,8 @@
         </div>
     </div>
 </div>
+
+
 
 @code {
     public Periodista periodista { get; set; } = new Periodista();
@@ -220,3 +242,28 @@
         }
     }
 }
+<style>
+    .bg-gradient-green {
+        background: linear-gradient(135deg, #2d5f4d 0%, #103713 100%);
+    }
+
+    .btn-orange {
+        background-color: #e65100;
+        color: white;
+        border: none;
+    }
+
+        .btn-orange:hover {
+            background-color: #bf360c;
+            color: white;
+        }
+
+    .section-icon {
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+</style>

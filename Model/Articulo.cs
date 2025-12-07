@@ -7,7 +7,7 @@ public class Articulo
         [Key]
         public int ArticuloId { get; set; }
         public string Titulo { get; set; } = string.Empty;
-        public string Resumen { get; set; }
+        public string? Resumen { get; set; }
         public string Contenido { get; set; }           
 
         public int? InstitucionId { get; set; }       
@@ -35,7 +35,7 @@ public class Articulo
 
         
         public decimal TotalPromocional => ServiciosPromocionales?.Sum(s => s.PrecioAplicado) ?? 0m;
-        public decimal TotalAPagar => (Categoria?.PrecioBase ?? 0m) + TotalPromocional;
+        public decimal TotalAPagar { get; set; }
     }
 
 

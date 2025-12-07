@@ -1,0 +1,699 @@
+@page "/articulos/crear"
+@page "/articulos/editar/{ArticuloId:int}"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Forms
+@inject ArticuloService ArticuloService
+@inject CategoriaService CategoriaService
+@inject PeriodistaService PeriodistaService
+@inject InstitucionService InstitucionService
+@inject ServicioPromocionalService ServicioPromocionalService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager navigationManager
+@rendermode InteractiveServer
+
+<PageTitle>@(ArticuloId > 0 ? "Editar Artículo" : "Crear Artículo")</PageTitle>
+
+
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-6 fw-bold mb-2">
+                    <i class="bi bi-file-alt me-3"></i>
+                    @(ArticuloId > 0 ? "Editar Artículo" : "Crear Nuevo Artículo")
+                </h1>
+                <p class="mb-0 opacity-75">Completa la información del artículo</p>
+            </div>
+            <div>
+                <a href="/articulos" class="text-white text-decoration-none opacity-75">
+                    <i class="bi bi-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container pb-5">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="bi bi-file-text fs-4"></i>
+                    <div>
+                        <h5 class="mb-0">Información Básica</h5>
+                        <small class="opacity-75">Datos principales del artículo</small>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Título del Artículo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" @bind="articulo.Titulo" placeholder="Ingrese el título del artículo" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Categoría <span class="text-danger">*</span></label>
+                        <select class="form-select" @bind="selectedCategoriaId">
+                            <option value="0">-- Seleccione una categoría --</option>
+                            @foreach (var categoria in listaCategorias)
+                            {
+                                <option value="@categoria.CategoriaId">@categoria.Nombre (RD$ @categoria.PrecioBase.ToString("N0"))</option>
+                            }
+                        </select>
+                    </div>
+
+                    @if (esUsuarioInstitucion)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Autor</label>
+                            <input type="text" class="form-control" value="@nombreInstitucion" readonly>
+                            <small class="text-muted">Este artículo será publicado a nombre de tu institución</small>
+                        </div>
+                    }
+
+                    @if (esUsuarioPeriodista)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Autor</label>
+                            <input type="text" class="form-control" value="@nombrePeriodista" readonly>
+                            <small class="text-muted">Este artículo será publicado a tu nombre</small>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="bi bi-align-left fs-4"></i>
+                    <div>
+                        <h5 class="mb-0">Contenido del Artículo</h5>
+                        <small class="opacity-75">Redacción completa del artículo</small>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Contenido <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="10" @bind="articulo.Contenido" 
+                                  placeholder="Escriba el contenido completo del artículo..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="bi bi-images fs-4"></i>
+                    <div>
+                        <h5 class="mb-0">Imágenes</h5>
+                        <small class="opacity-75">Sube imágenes para tu artículo</small>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="image-upload-zone mb-3">
+                        <i class="bi bi-cloud-upload fs-1 mb-3" style="color: #e65100;"></i>
+                        <h6>Selecciona una imagen</h6>
+                        <small class="text-muted">Formatos: JPG, PNG, GIF (Máx. 5MB)</small>
+                        <InputFile OnChange="CargarImagen" class="form-control mt-3" accept="image/*" />
+                    </div>
+
+                    @if (articulo.Imagenes.Any())
+                    {
+                        <div class="row">
+                            @foreach (var imagen in articulo.Imagenes)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-0 shadow-sm">
+                                        <img src="@imagen" class="card-img-top" style="height: 200px; object-fit: cover; border: 2px solid #e65100; border-radius: 8px 8px 0 0;" alt="Imagen" />
+                                        <div class="card-body p-2">
+                                            <button type="button" class="btn btn-sm btn-danger w-100" @onclick="@(() => EliminarImagen(imagen))">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            @if (!esUsuarioPeriodista)
+            {
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="bi bi-megaphone fs-4"></i>
+                        <div>
+                            <h5 class="mb-0">Servicios Promocionales</h5>
+                            <small class="opacity-75">Opcional - Aumenta la visibilidad del artículo</small>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        @if (!string.IsNullOrEmpty(errorServicio))
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                @errorServicio
+                                <button type="button" class="btn-close" @onclick="@(() => errorServicio = string.Empty)"></button>
+                            </div>
+                        }
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">Servicio</label>
+                                <select class="form-select" @bind="servicioSeleccionadoId">
+                                    <option value="0">Seleccione un servicio</option>
+                                    @foreach (var servicio in listaServiciosPromocionales)
+                                    {
+                                        <option value="@servicio.ServicioPromocionalId">@servicio.Nombre - RD$ @servicio.Precio.ToString("N0")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn btn-orange w-100" @onclick="AgregarServicio">
+                                    <i class="bi bi-plus-circle me-2"></i>Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (articulo.ServiciosPromocionales.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Servicio</th>
+                                            <th class="text-end">Precio</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var detalle in articulo.ServiciosPromocionales)
+                                        {
+                                            var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == detalle.ServicioPromocionalId);
+                                            <tr>
+                                                <td>@(servicio?.Nombre ?? "N/A")</td>
+                                                <td class="text-end price-orange">RD$ @detalle.PrecioAplicado.ToString("N0")</td>
+                                                <td class="text-end">
+                                                    <button type="button" class="btn btn-sm btn-danger" @onclick="() => EliminarServicio(detalle)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                  
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h4 class="mb-1 fw-bold">Resumen de Costos</h4>
+                        </div>
+                        <span class="badge" style="background: #fff3e0; color: #e65100; padding: 8px 16px; border-radius: 20px;">
+                            Pendiente
+                        </span>
+                    </div>
+
+                    <hr class="my-4">
+
+                    @if (esUsuarioPeriodista)
+                    {
+                        <div class="alert alert-success border-0">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-check-circle"></i> ¡Publicación Gratuita!
+                            </h6>
+                            <p class="mb-2">Como periodista, publica sin costo alguno.</p>
+                            <hr />
+                         
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-orange" @onclick="@(() => Guardar(EstadoArticulo.Pendiente))">
+                                <i class="bi bi-send me-2"></i>Enviar Artículo
+                            </button>
+                            <button type="button" class="btn btn-green" @onclick="@(() => Guardar(EstadoArticulo.Borrador))">
+                                <i class="bi bi-save me-2"></i>Guardar Borrador
+                            </button>
+                            <a href="/articulos" class="btn btn-secondary">
+                                <i class="bi bi-x me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                      
+                        <div class="mb-4">
+                            @if (precioBase > 0)
+                            {
+                                <div class="d-flex justify-content-between align-items-center py-2">
+                                    <span>Precio base categoría</span>
+                                    <strong>RD$ @precioBase.ToString("N2")</strong>
+                                </div>
+                            }
+
+                            @foreach (var detalle in articulo.ServiciosPromocionales)
+                            {
+                                var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == detalle.ServicioPromocionalId);
+                                <div class="d-flex justify-content-between align-items-center py-2">
+                                    <span>@(servicio?.Nombre ?? "Servicio")</span>
+                                    <strong>RD$ @detalle.PrecioAplicado.ToString("N2")</strong>
+                                </div>
+                            }
+
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span>Tarifa periodista</span>
+                                <strong>RD$ 0.00</strong>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                      
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="mb-0 fw-bold">Total</h5>
+                            <h4 class="mb-0 fw-bold" style="color: #2e7d32;">RD$ @((precioBase + totalServicios).ToString("N2"))</h4>
+                        </div>
+
+                        <div class="d-grid gap-2">
+
+                            <button type="button" class="btn text-white" style="background: #e65100;" @onclick="@(() => Guardar(EstadoArticulo.Pendiente))">
+                                <i class="bi bi-send"></i>
+                        
+                                Enviar para Revisión
+
+                            </button>
+                            <button type="button" class="btn btn-green" @onclick="@(() => Guardar(EstadoArticulo.Borrador))">
+                                <i class="bi bi-save me-2"></i>Guardar Borrador
+                            </button>
+                            <a href="/articulos" class="btn btn-secondary">
+                                <i class="bi bi-x me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [Parameter] public int ArticuloId { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? authenticationStateTask { get; set; }
+
+    private Articulo articulo = new();
+    private List<Categoria> listaCategorias = new();
+    private List<Periodista> listaPeriodistas = new();
+    private List<ServicioPromocional> listaServiciosPromocionales = new();
+
+    private string errorMessage = string.Empty;
+    private string errorServicio = string.Empty;
+    private int servicioSeleccionadoId = 0;
+
+    private bool esUsuarioInstitucion;
+    private bool esUsuarioPeriodista;
+    private int institucionIdActual;
+    private int periodistaIdActual;
+    private string nombreInstitucion = string.Empty;
+    private string nombrePeriodista = string.Empty;
+
+    private decimal precioBase;
+    private decimal totalServicios;
+    private decimal tarifaPeriodista;
+    private string categoriaNombre = string.Empty;
+
+    private int selectedCategoriaId
+    {
+        get => articulo.CategoriaId;
+        set
+        {
+            articulo.CategoriaId = value;
+            RecalcularTotales();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        listaCategorias = await CategoriaService.Listar();
+        listaPeriodistas = await PeriodistaService.Listar();
+        listaServiciosPromocionales = await ServicioPromocionalService.Listar();
+
+        if (authenticationStateTask != null)
+        {
+            var authState = await authenticationStateTask;
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                esUsuarioInstitucion = user.IsInRole(AppRoles.AdminInstitucion) || user.IsInRole(AppRoles.RedactorInstitucion);
+                esUsuarioPeriodista = user.IsInRole(AppRoles.Periodista);
+
+                if (esUsuarioInstitucion)
+                {
+                    await CargarDatosInstitucion(user);
+                }
+                else if (esUsuarioPeriodista)
+                {
+                    await CargarDatosPeriodista(user);
+                }
+            }
+        }
+
+        if (ArticuloId > 0)
+        {
+            articulo = await ArticuloService.GetArticuloCompleto(ArticuloId) ?? new Articulo();
+        }
+    }
+
+    private async Task CargarDatosInstitucion(ClaimsPrincipal user)
+    {
+        var institucionIdClaim = user.FindFirst("InstitucionId");
+        if (institucionIdClaim != null && int.TryParse(institucionIdClaim.Value, out int instId))
+        {
+            institucionIdActual = instId;
+        }
+        else
+        {
+            var email = user.FindFirst(ClaimTypes.Email)?.Value;
+            if (!string.IsNullOrEmpty(email))
+            {
+                var appUser = await UserManager.FindByEmailAsync(email);
+                if (appUser?.InstitucionId != null)
+                {
+                    institucionIdActual = appUser.InstitucionId.Value;
+                }
+            }
+        }
+        if (institucionIdActual > 0)
+        {
+            var institucion = await InstitucionService.Buscar(institucionIdActual);
+            nombreInstitucion = institucion?.Nombre ?? "Institucion";
+        }
+    }
+
+    private async Task CargarDatosPeriodista(ClaimsPrincipal user)
+    {
+        var periodistaIdClaim = user.FindFirst("PeriodistaId");
+        if (periodistaIdClaim != null && int.TryParse(periodistaIdClaim.Value, out int perId))
+        {
+            periodistaIdActual = perId;
+        }
+        else
+        {
+            var email = user.FindFirst(ClaimTypes.Email)?.Value;
+            if (!string.IsNullOrEmpty(email))
+            {
+                var appUser = await UserManager.FindByEmailAsync(email);
+                if (appUser?.PeriodistaId != null)
+                {
+                    periodistaIdActual = appUser.PeriodistaId.Value;
+                }
+            }
+        }
+
+        if (periodistaIdActual > 0)
+        {
+            var periodista = await PeriodistaService.Buscar(periodistaIdActual);
+            if (periodista != null)
+            {
+                tarifaPeriodista = periodista.TarifaBase;
+                nombrePeriodista = periodista.Nombres;
+            }
+        }
+
+        articulo.EsLibre = true;
+        articulo.PeriodistaId = periodistaIdActual;
+    }
+
+    private async Task CargarImagen(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var archivo = e.File;
+
+            if (archivo.Size > 5 * 1024 * 1024)
+            {
+                errorMessage = "La imagen no puede superar los 5MB";
+                return;
+            }
+
+
+            var extension = Path.GetExtension(archivo.Name);
+            var nombreArchivo = $"{Guid.NewGuid()}{extension}";
+
+
+            var carpetaUploads = Path.Combine("wwwroot", "uploads");
+            Directory.CreateDirectory(carpetaUploads);
+
+
+            var rutaCompleta = Path.Combine(carpetaUploads, nombreArchivo);
+            await using var stream = new FileStream(rutaCompleta, FileMode.Create);
+            await archivo.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).CopyToAsync(stream);
+
+
+            articulo.Imagenes.Add($"/uploads/{nombreArchivo}");
+            errorMessage = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar imagen: {ex.Message}";
+        }
+    }
+
+    private void AgregarServicio()
+    {
+        if (servicioSeleccionadoId <= 0)
+        {
+            errorServicio = "Debe seleccionar un servicio";
+            return;
+        }
+
+        var servicio = listaServiciosPromocionales.FirstOrDefault(s => s.ServicioPromocionalId == servicioSeleccionadoId);
+        if (servicio == null)
+        {
+            errorServicio = "Servicio no encontrado";
+            return;
+        }
+
+        if (articulo.ServiciosPromocionales.Any(s => s.ServicioPromocionalId == servicioSeleccionadoId))
+        {
+            errorServicio = "Este servicio ya ha sido agregado";
+            return;
+        }
+
+        articulo.ServiciosPromocionales.Add(new ArticuloServicioPromocionales
+        {
+            ServicioPromocionalId = servicioSeleccionadoId,
+            PrecioAplicado = servicio.Precio,
+            FechaAplicacion = DateTime.Now
+        });
+
+        servicioSeleccionadoId = 0;
+        errorServicio = string.Empty;
+        RecalcularTotales();
+    }
+
+    private void EliminarServicio(ArticuloServicioPromocionales servicio)
+    {
+        articulo.ServiciosPromocionales.Remove(servicio);
+        RecalcularTotales();
+    }
+
+    private void EliminarImagen(string urlImagen)
+    {
+        try
+        {
+
+            if (urlImagen.StartsWith("/uploads/"))
+            {
+                var rutaArchivo = Path.Combine("wwwroot", urlImagen.TrimStart('/'));
+                if (File.Exists(rutaArchivo))
+                {
+                    File.Delete(rutaArchivo);
+                }
+            }
+            articulo.Imagenes.Remove(urlImagen);
+        }
+        catch
+        {
+            articulo.Imagenes.Remove(urlImagen);
+        }
+    }
+
+    private void RecalcularTotales()
+    {
+        var categoria = listaCategorias.FirstOrDefault(c => c.CategoriaId == articulo.CategoriaId);
+        precioBase = categoria?.PrecioBase ?? 0;
+        categoriaNombre = categoria?.Nombre ?? "Sin categoría";
+
+        totalServicios = articulo.ServiciosPromocionales.Sum(s => s.PrecioAplicado);
+      
+    }
+    private async Task Guardar(EstadoArticulo estado)
+    {
+        if (string.IsNullOrWhiteSpace(articulo.Titulo))
+        {
+            errorMessage = "El título es requerido";
+            return;
+        }
+
+        if (articulo.CategoriaId == 0)
+        {
+            errorMessage = "Debe seleccionar una categoría";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(articulo.Contenido))
+        {
+            errorMessage = "El contenido es requerido";
+            return;
+        }
+
+        try
+        {
+            articulo.Resumen = articulo.Contenido.Length > 200
+                ? articulo.Contenido.Substring(0, 200) + "..."
+                : articulo.Contenido;
+
+            articulo.Estado = estado;
+
+           
+            if (esUsuarioInstitucion)
+            {
+                articulo.InstitucionId = institucionIdActual;
+                articulo.PeriodistaId = null;
+
+                
+                var categoria = await CategoriaService.Buscar(articulo.CategoriaId);
+
+                if (categoria == null)
+                {
+                    errorMessage = "No se pudo obtener el precio de la categoría";
+                    return;
+                }
+
+                articulo.TotalAPagar = categoria.PrecioBase; 
+            }
+            
+            else if (esUsuarioPeriodista)
+            {
+                articulo.PeriodistaId = periodistaIdActual;
+                articulo.InstitucionId = null;
+
+                
+                var periodista = await PeriodistaService.Buscar(periodistaIdActual);
+
+                if (periodista == null)
+                {
+                    errorMessage = "No se pudo obtener la tarifa del periodista";
+                    return;
+                }
+
+                articulo.TotalAPagar = periodista.TarifaBase;
+            }
+
+            
+            var ok = await ArticuloService.Guardar(articulo);
+
+            if (!ok)
+            {
+                errorMessage = "No se pudo guardar el artículo";
+                return;
+            }
+
+            
+            navigationManager.NavigateTo("/articulos");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error inesperado: " + ex.Message;
+        }
+    }
+}
+
+                <style>
+    .page-header {
+        background: linear-gradient(135deg, #2d5f4d 0%, #103713 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+    }
+
+    .section-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 24px;
+        border: none;
+    }
+
+    .section-header {
+        background: linear-gradient(135deg, #2d5f4d 0%, #103713 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-body {
+        padding: 24px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #e65100;
+        box-shadow: 0 0 0 0.2rem rgba(230, 81, 0, 0.25);
+    }
+
+    .image-upload-zone {
+        border: 2px dashed #e65100;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        background: #fff3e0;
+        transition: all 0.3s;
+    }
+
+    .image-upload-zone:hover {
+        background: #ffe0b2;
+        border-color: #bf360c;
+    }
+
+    .btn-orange {
+        background: #e65100;
+        border: none;
+        color: white;
+    }
+
+    .btn-orange:hover {
+        background: #bf360c;
+        color: white;
+    }
+
+    .btn-green {
+        background: #2d5f4d;
+        border: none;
+        color: white;
+    }
+
+    .btn-green:hover {
+        background: #103713;
+        color: white;
+    }
+
+    .price-orange {
+        color: #e65100;
+        font-weight: 600;
+    }
+</style>

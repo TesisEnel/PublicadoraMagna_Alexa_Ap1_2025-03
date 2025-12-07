@@ -2,21 +2,20 @@
 
 #nullable disable
 
-namespace PublicadoraMagna.Migrations
+namespace PublicadoraMagna.Migrations;
+
+/// <inheritdoc />
+public partial class articulo : Migration
 {
     /// <inheritdoc />
-    public partial class articulo : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
 
-        }
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
 
-        }
     }
 }

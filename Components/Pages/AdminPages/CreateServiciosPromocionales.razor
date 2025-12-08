@@ -1,6 +1,6 @@
 ﻿@page "/admin/servicios-promocionales/crear"
 @page "/admin/servicios-promocionales/editar/{Id:int}"
-@using PublicadoraMagna.Model
+@layout AdminLayout
 @attribute [Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 @inject ServicioPromocionalService servicioService

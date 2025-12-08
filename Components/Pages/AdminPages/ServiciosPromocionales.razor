@@ -1,5 +1,5 @@
 ﻿@page "/admin/servicios-promocionales"
-@using PublicadoraMagna.Model
+@layout AdminLayout
 @attribute [Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 @inject ServicioPromocionalService servicioService

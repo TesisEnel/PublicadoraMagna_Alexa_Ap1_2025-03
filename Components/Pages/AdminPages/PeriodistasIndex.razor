@@ -1,4 +1,5 @@
 @page "/admin/periodistas"
+@attribute [Authorize(Roles = "Admin")]
 @inject PeriodistaService PeriodistaService
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager Navigation

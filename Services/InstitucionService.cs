@@ -7,13 +7,9 @@ namespace PublicadoraMagna.Services;
 
 public class InstitucionService(IDbContextFactory<ApplicationDbContext> dbFactory, UserManager<ApplicationUser> userManager)
 {
-  
-  
+
     public async Task<bool> Guardar(Institucion institucion)
     {
-        if (string.IsNullOrWhiteSpace(institucion.Nombre))
-            throw new Exception("El nombre de la institución es requerido");
-
         if (!await Existe(institucion.InstitucionId))
         {
             return await Insertar(institucion);

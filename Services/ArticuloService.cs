@@ -8,13 +8,6 @@ public class ArticuloService(IDbContextFactory<ApplicationDbContext> dbFactory, 
 {
     public async Task<bool> Guardar(Articulo articulo)
     {
-       
-        if (string.IsNullOrWhiteSpace(articulo.Titulo))
-            throw new Exception("El título del artículo es requerido");
-        if (string.IsNullOrWhiteSpace(articulo.Contenido))
-            throw new Exception("El contenido del artículo es requerido");
-        if (articulo.CategoriaId <= 0)
-            throw new Exception("Debe seleccionar una categoría");
 
         if (!await Existe(articulo.ArticuloId))
         {

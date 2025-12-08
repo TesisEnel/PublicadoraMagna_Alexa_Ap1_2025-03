@@ -6,8 +6,6 @@ namespace PublicadoraMagna.Services;
 
 public class CategoriaService(IDbContextFactory<ApplicationDbContext> dbFactory)
 {
-
- 
     public async Task<bool> Guardar(Categoria categoria)
     {
         if (categoria.CategoriaId == 0)

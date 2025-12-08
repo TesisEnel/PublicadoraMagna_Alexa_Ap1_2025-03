@@ -1,5 +1,5 @@
 ﻿@page "/institucion/encargos"
-@attribute [Authorize(Roles = "AdminInstitucion,RedactorInstitucion")]
+@attribute [Authorize(Roles = "AdminInstitucion,RedactorInstitucion,Admin")]
 @layout InstitucionLayout
 @inject EncargoArticuloService EncargoService
 @inject ArticuloService ArticuloService

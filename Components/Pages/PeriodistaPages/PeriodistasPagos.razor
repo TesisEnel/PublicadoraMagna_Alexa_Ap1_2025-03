@@ -1,5 +1,5 @@
 @page "/periodista/pagos"
-@attribute [Authorize(Roles = "Periodista")]
+@attribute [Authorize(Roles = "Periodista,Admin")]
 @layout PeriodistaLayout
 @inject ArticuloService ArticuloService
 @inject AuthenticationStateProvider AuthProvider
